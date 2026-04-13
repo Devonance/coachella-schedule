@@ -79,6 +79,7 @@ const STAGES = {
   yuma: { name: "Yuma", short: "YUMA", color: "#457B9D", mapX: 12, mapY: 22 },
   quasar: { name: "Quasar", short: "QSAR", color: "#06D6A0", mapX: 42, mapY: 68 },
   dolab: { name: "Do LaB", short: "DoLB", color: "#F72585", mapX: 18, mapY: 58 },
+  heineken: { name: "Heineken House", short: "HNKN", color: "#00A650", mapX: 87, mapY: 33 },
 };
 
 // ── WALKING TIMES (minutes, avg) ──
@@ -92,6 +93,9 @@ const WALK = {
   "sahara-sonora": 14, "sahara-yuma": 9, "sahara-quasar": 7, "sahara-dolab": 6,
   "sonora-yuma": 7, "sonora-quasar": 11, "sonora-dolab": 10,
   "yuma-quasar": 12, "yuma-dolab": 8, "quasar-dolab": 7,
+  "coachella-heineken": 10, "outdoor-heineken": 6, "gobi-heineken": 5, "mojave-heineken": 7,
+  "sahara-heineken": 15, "sonora-heineken": 6, "yuma-heineken": 12, "quasar-heineken": 10,
+  "dolab-heineken": 12, "heineken-heineken": 0,
 };
 
 function getWalk(a, b) {
@@ -269,7 +273,7 @@ const SUNDAY_RAW = [
   ["Little Simz", "mojave", "16:25", "17:10", "hiphop", "6eXZu6O7nAUA5z6vLV51P6", false, []],
   ["Suicidal Tendencies", "mojave", "17:35", "18:25", "rock", "3JKEjnSBbPkULPxmBjDd70", false, []],
   ["Iggy Pop", "mojave", "19:10", "20:10", "rock", "381l9TZJ3OGgjKENpXFBMh", false, []],
-  ["FKA twigs", "mojave", "20:45", "22:00", "electronic", "6nB0iY1cjSY1KyhYyuIIKH", false, []],
+  ["FKA twigs", "mojave", "20:45", "22:00", "electronic", null, false, []],
   ["LOBOMAN", "sahara", "14:30", "15:30", "electronic", null, false, []],
   ["Girl Math (VNSSA x NALA)", "sahara", "15:35", "16:35", "electronic", "2FGbrr8wyYcFVj3MLkjKhP", false, []],
   ["BUNT.", "sahara", "16:45", "17:45", "electronic", "13VPuOJILJ7V8t1hiODqhq", false, []],
@@ -289,7 +293,7 @@ const SUNDAY_RAW = [
   ["Model/Actriz", "sonora", "15:10", "15:50", "rock", "1uKJJtXAqz2MfvTx5FGQWl", false, []],
   ["Jane Remover", "sonora", "16:20", "17:00", "electronic", "6xnvNmSBF0FxhrRnPJAXui", false, []],
   ["Los Retros", "sonora", "17:30", "18:10", "rnb", "71kGKidFfvt7KQFQwNjLDq", false, []],
-  ["RØZ", "sonora", "18:40", "19:30", "electronic", null, false, []],
+  ["RØZ", "sonora", "18:40", "19:30", "electronic", "4g2PqS7G7K0NF4X2Kx5Hj9", false, []],
   ["DRAIN", "sonora", "20:00", "20:40", "rock", "7FY7gNqJaZjb3xZt2E1ISf", false, []],
   ["French Police", "sonora", "21:10", "22:00", "rock", null, false, []],
   ["LE YORA", "yuma", "13:00", "14:00", "electronic", null, false, []],
@@ -311,6 +315,58 @@ const SUNDAY_RAW = [
   ["Tourist", "dolab", "18:00", "19:30", "electronic", "1G2r2hs0sfHnLDcT1T2BPQ", false, []],
   ["X CLUB.", "dolab", "19:30", "21:00", "electronic", null, false, []],
 ];
+
+// ── HEINEKEN HOUSE (Weekend 2) — set times announced day-of via the Coachella app ──
+const HEINEKEN_HOUSE = [
+  { name: "Big Boi", spotifyId: "4X1MR3gNn1gNZVTmbiR0Re", note: "Weekend 2 only" },
+  { name: "Andruss", spotifyId: "4RG2KWZCZkSrWQ1f1X5Mmz", note: null },
+  { name: "Coi Leray", spotifyId: "3rIZLBiFgt4v2VBopnhSHj", note: null },
+  { name: "Joshwa", spotifyId: "1jgcwOxqJe0jKxeJh3dMir", note: null },
+  { name: "Less Than Jake", spotifyId: "0PFGaKctDSbOoHmlbBiRvK", note: null },
+  { name: "Mild Minds", spotifyId: "7ypMR6QxDggI8JFcPY7i9h", note: null },
+  { name: "Motion City Soundtrack", spotifyId: "56huhIbFVGu3LZMabSrGHi", note: null },
+  { name: "Robin Schulz", spotifyId: "3t5xRXzsuZmMDkQzgOX35S", note: null },
+  { name: "Sander Kleinenberg", spotifyId: "3ABT4rjDqKtFDowGsmmLyI", note: null },
+  { name: "Wale", spotifyId: "67nwj3Y5sZQLl72VNUHEML", note: null },
+  { name: "Zerb", spotifyId: "5CeLIuFg1GFOEFbBBPOiAV", note: null },
+  { name: "Kryptogram", spotifyId: null, note: null },
+  { name: "Niiko X Swae", spotifyId: null, note: null },
+  { name: "Nimino", spotifyId: null, note: null },
+  { name: "Oskar Med K", spotifyId: null, note: null },
+  { name: "REDKE", spotifyId: null, note: null },
+];
+
+// ── CANCELLATION & EVENT NOTICES ──
+const NOTICES = [
+  { type: "warning", text: "Anyma's Weekend 1 Friday midnight set was canceled due to dangerous high winds. Check @coachella for Weekend 2 updates.", artist: "Anyma (Æden)" },
+  { type: "canceled", text: "Lambrini Girls have been canceled (singer's neck fracture). They will NOT appear Weekend 2.", artist: null },
+  { type: "canceled", text: "Solomun has been canceled and will not perform at Coachella 2026.", artist: null },
+];
+
+// ── GUEST APPEARANCES (from Weekend 1 — may or may not repeat Weekend 2) ──
+const GUEST_APPEARANCES = {
+  "Sabrina Carpenter": ["Susan Sarandon", "Will Ferrell", "Samuel L. Jackson (voice)", "Corey Fogelmanis"],
+  "Justin Bieber": ["The Kid LAROI", "Dijon", "Tems", "Wizkid", "Mk.gee"],
+  "KAROL G": ["Mariah Angeliq", "Becky G", "Wisin", "Greg Gonzalez (Cigarettes After Sex)"],
+  "Addison Rae": ["Maddie Ziegler"],
+  "Young Thug": ["Camila Cabello", "Ty Dolla $ign"],
+  "Major Lazer": ["M.I.A."],
+  "Wet Leg": ["HorsegiirL"],
+  "Gigi Perez": ["Bella Perez", "Noah Cyrus"],
+  "Ninajirachi": ["Porter Robinson"],
+  "RØZ": ["Rauw Alejandro"],
+  "BIA": ["Natalie Nunn", "OhGeesy", "DDG", "310babii"],
+  "PinkPantheress": ["Tyriq Withers", "Thundercat"],
+  "Sexyy Red": ["Lizzo"],
+  "Swae Lee": ["Jhené Aiko", "Nav"],
+  "Levity": ["Big Sean"],
+  "KATSEYE": ["Huntrix (Ejae, Audrey Nuna, Rei Ami)"],
+  "Oklou": ["Underscores"],
+  "flowerovlove": ["BINI"],
+  "Moby": ["Jacob Lusk"],
+  "David Guetta": ["Jennifer Lopez"],
+  "Suicidal Tendencies": ["Thundercat"],
+};
 
 // Parse raw data into objects
 function parsePerformers(raw, day) {
@@ -357,6 +413,8 @@ function App() {
   const [showPlanner, setShowPlanner] = useState(false);
   const [scrubberMin, setScrubberMin] = useState(GRID_START + 240);
   const [showMap, setShowMap] = useState(false);
+  const [showNotices, setShowNotices] = useState(true);
+  const [showHeineken, setShowHeineken] = useState(false);
   const planRef = useRef(null);
 
   const dayData = DAYS[activeDay];
@@ -518,6 +576,13 @@ function App() {
                 </button>
               ))}
               <div style={{ flex: 1 }} />
+              <button onClick={() => setShowHeineken(!showHeineken)} style={{
+                padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+                background: showHeineken ? "#00A650" : "transparent", color: "#fff",
+                cursor: "pointer", fontFamily: "'DM Sans'", fontSize: 13, fontWeight: 600
+              }}>
+                {showHeineken ? "✕ Heineken" : "🍺 Heineken"}
+              </button>
               <button onClick={() => setShowMap(!showMap)} style={{
                 padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
                 background: showMap ? "var(--sage)" : "transparent", color: "#fff",
@@ -565,6 +630,32 @@ function App() {
             ))}
           </div>
         </div>
+
+        {/* ── NOTICES BANNER ── */}
+        {showNotices && (
+          <div style={{
+            background: "rgba(242,204,143,0.15)", borderBottom: "1px solid rgba(242,204,143,0.3)",
+            padding: "8px 20px"
+          }}>
+            <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                {NOTICES.map((n, i) => (
+                  <div key={i} style={{
+                    fontSize: 12, color: n.type === "canceled" ? "var(--red)" : "#8B6914",
+                    padding: "2px 0", display: "flex", gap: 6, alignItems: "flex-start"
+                  }}>
+                    <span>{n.type === "canceled" ? "✕" : "⚠"}</span>
+                    <span>{n.text}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setShowNotices(false)} style={{
+                background: "none", border: "none", cursor: "pointer", fontSize: 14,
+                color: "var(--brown)", padding: 2, flexShrink: 0
+              }}>✕</button>
+            </div>
+          </div>
+        )}
 
         {/* ── MAIN CONTENT ── */}
         <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 12px", display: "flex", gap: 0 }}>
@@ -798,7 +889,7 @@ function App() {
             />
             {/* Now playing badges */}
             <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-              {MAIN_STAGES.slice(0, 7).map(s => {
+              {MAIN_STAGES.map(s => {
                 const playing = performers.find(p => p.stage === s && p.startMin <= scrubberMin && p.endMin > scrubberMin);
                 if (!playing) return null;
                 return (
@@ -816,7 +907,20 @@ function App() {
         </div>
 
         {/* ── MAP OVERLAY ── */}
-        {showMap && (
+        {showMap && (() => {
+          const HOTSPOTS = {
+            coachella: { x: 35, y: 1, w: 30, h: 6, cx: 50, cy: 4 },
+            outdoor:   { x: 72, y: 2, w: 22, h: 5, cx: 83, cy: 5 },
+            yuma:      { x: 2, y: 18, w: 16, h: 6, cx: 10, cy: 21 },
+            sonora:    { x: 58, y: 20, w: 16, h: 6, cx: 66, cy: 23 },
+            gobi:      { x: 60, y: 35, w: 15, h: 6, cx: 67, cy: 38 },
+            mojave:    { x: 56, y: 48, w: 18, h: 7, cx: 65, cy: 52 },
+            dolab:     { x: 10, y: 55, w: 16, h: 7, cx: 18, cy: 59 },
+            quasar:    { x: 38, y: 65, w: 16, h: 5, cx: 46, cy: 68 },
+            sahara:    { x: 10, y: 75, w: 20, h: 9, cx: 20, cy: 80 },
+            heineken:  { x: 80, y: 30, w: 15, h: 6, cx: 87, cy: 33 },
+          };
+          return (
           <div style={{
             position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
             background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex",
@@ -824,49 +928,164 @@ function App() {
           }} onClick={() => setShowMap(false)}>
             <div onClick={e => e.stopPropagation()} style={{
               background: "var(--sand)", borderRadius: 16, padding: 24,
-              maxWidth: 600, width: "100%", maxHeight: "90vh", overflowY: "auto",
+              maxWidth: 560, width: "100%", maxHeight: "90vh", overflowY: "auto",
               position: "relative"
             }}>
               <h3 className="playfair" style={{ fontSize: 22, marginBottom: 4 }}>Festival Map</h3>
               <p style={{ fontSize: 12, color: "var(--brown)", marginBottom: 16 }}>
-                Hover a stage to see who's playing at {minToTime(scrubberMin)}
+                Tap a stage to see who's playing at {minToTime(scrubberMin)}
               </p>
-              <svg viewBox="0 0 200 200" style={{ width: "100%", background: "#4a7c59", borderRadius: 12 }}>
-                {/* Ground texture */}
-                <rect width="200" height="200" fill="#4a7c59" rx="12" />
-                <rect x="0" y="0" width="200" height="30" fill="#3D6B4A" rx="12" />
-                {/* Stage markers */}
-                {Object.entries(STAGES).map(([key, s]) => {
+              <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden" }}>
+                <img
+                  src="venue-map.jpg"
+                  alt="Coachella 2026 Venue Map"
+                  style={{ width: "100%", height: "auto", display: "block" }}
+                />
+                {/* Walking path SVG overlay */}
+                <svg style={{
+                  position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none"
+                }}>
+                  {currentPlan.map((p, i) => {
+                    const next = currentPlan[i + 1];
+                    if (!next) return null;
+                    const from = HOTSPOTS[p.stage];
+                    const to = HOTSPOTS[next.stage];
+                    if (!from || !to) return null;
+                    const w = getWalk(p.stage, next.stage);
+                    return (
+                      <g key={`walk-${i}`}>
+                        <line
+                          x1={`${from.cx}%`} y1={`${from.cy}%`}
+                          x2={`${to.cx}%`} y2={`${to.cy}%`}
+                          stroke="#E07A5F" strokeWidth="2" strokeDasharray="6,4" opacity="0.7"
+                        />
+                        <text
+                          x={`${(from.cx + to.cx) / 2}%`} y={`${(from.cy + to.cy) / 2}%`}
+                          fill="#1A1A1A" fontSize="10" textAnchor="middle"
+                          style={{ background: "#fff", paintOrder: "stroke", stroke: "#F5F0E8", strokeWidth: 3 }}
+                        >~{w}m</text>
+                      </g>
+                    );
+                  })}
+                </svg>
+                {/* Hotspot overlays */}
+                {Object.entries(HOTSPOTS).map(([key, hs]) => {
+                  const stageInfo = STAGES[key];
+                  if (!stageInfo) return null;
                   const playing = performers.find(p => p.stage === key && p.startMin <= scrubberMin && p.endMin > scrubberMin);
                   const planned = currentPlan.some(p => p.stage === key);
-                  const cx = s.mapX, cy = s.mapY;
+                  const upcoming = performers.find(p => p.stage === key && p.startMin > scrubberMin);
                   return (
-                    <g key={key} style={{ cursor: "pointer" }} onClick={() => {/* could filter */}}>
-                      {/* Glow if artist playing */}
+                    <div key={key} style={{
+                      position: "absolute", left: `${hs.x}%`, top: `${hs.y}%`,
+                      width: `${hs.w}%`, height: `${hs.h}%`,
+                      borderRadius: 6, cursor: "pointer",
+                      background: playing
+                        ? `rgba(${key === "heineken" ? "0,166,80" : "224,122,95"}, 0.35)`
+                        : "rgba(255,255,255,0.1)",
+                      border: playing
+                        ? `2px solid rgba(${key === "heineken" ? "0,166,80" : "224,122,95"}, 0.8)`
+                        : planned ? "2px solid rgba(129,178,154,0.8)" : "2px solid transparent",
+                      transition: "all 0.2s",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                      padding: 2
+                    }}
+                      onClick={() => {
+                        if (playing) setSelectedArtist(playing);
+                      }}
+                      title={playing
+                        ? `Now: ${playing.name}\n${fmtTime(playing.startTime)} – ${fmtTime(playing.endTime)}`
+                        : upcoming
+                          ? `Next: ${upcoming.name} at ${fmtTime(upcoming.startTime)}`
+                          : stageInfo.name
+                      }
+                    >
+                      {/* Stage label */}
+                      <div style={{
+                        fontSize: 8, fontWeight: 700, color: "#fff",
+                        textShadow: "0 1px 3px rgba(0,0,0,0.8)", textAlign: "center",
+                        lineHeight: 1.1
+                      }}>
+                        {stageInfo.short}
+                      </div>
                       {playing && (
-                        <circle cx={cx} cy={cy} r={14} fill={GENRES[playing.genre]?.color || s.color} opacity={0.25}>
-                          <animate attributeName="r" values="12;16;12" dur="2s" repeatCount="indefinite" />
-                        </circle>
+                        <div style={{
+                          fontSize: 7, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+                          textAlign: "center", maxWidth: "100%", overflow: "hidden",
+                          textOverflow: "ellipsis", whiteSpace: "nowrap"
+                        }}>
+                          {playing.name}
+                        </div>
                       )}
-                      <circle cx={cx} cy={cy} r={8} fill={s.color} stroke="#fff" strokeWidth={1.5} />
-                      {planned && <circle cx={cx + 7} cy={cy - 7} r={3} fill="var(--terra)" stroke="#fff" strokeWidth={0.8} />}
-                      <text x={cx} y={cy + 16} textAnchor="middle" fill="#fff" fontSize={5} fontWeight="bold" fontFamily="sans-serif">
-                        {s.short}
-                      </text>
-                      {playing && (
-                        <text x={cx} y={cy + 22} textAnchor="middle" fill="#FFE" fontSize={3.5} fontFamily="sans-serif" opacity={0.9}>
-                          {playing.name.length > 18 ? playing.name.slice(0, 16) + "…" : playing.name}
-                        </text>
+                      {/* Planned indicator dot */}
+                      {planned && (
+                        <div style={{
+                          position: "absolute", top: -3, right: -3,
+                          width: 8, height: 8, borderRadius: 4,
+                          background: "var(--terra)", border: "1.5px solid #fff"
+                        }} />
                       )}
-                    </g>
+                    </div>
                   );
                 })}
-                {/* Legend */}
-                <text x="5" y="195" fill="rgba(255,255,255,0.4)" fontSize="4" fontFamily="sans-serif">
-                  🧭 N ↑ · Empire Polo Club, Indio CA
-                </text>
-              </svg>
+              </div>
+              <p style={{ fontSize: 10, color: "var(--brown)", marginTop: 8, opacity: 0.6, textAlign: "center" }}>
+                Empire Polo Club, Indio CA · Dashed lines show walking paths for your plan
+              </p>
               <button onClick={() => setShowMap(false)} style={{
+                position: "absolute", top: 16, right: 16, background: "rgba(245,240,232,0.9)",
+                border: "none", fontSize: 20, cursor: "pointer", color: "var(--brown)",
+                borderRadius: 20, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center"
+              }}>✕</button>
+            </div>
+          </div>
+          );
+        })()}
+
+        {/* ── HEINEKEN HOUSE OVERLAY ── */}
+        {showHeineken && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex",
+            alignItems: "center", justifyContent: "center", padding: 20
+          }} onClick={() => setShowHeineken(false)}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: "var(--sand)", borderRadius: 16, padding: 24,
+              maxWidth: 500, width: "100%", maxHeight: "90vh", overflowY: "auto",
+              position: "relative"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 4, background: "#00A650" }} />
+                <h3 className="playfair" style={{ fontSize: 22 }}>Heineken House</h3>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--brown)", marginBottom: 16 }}>
+                Set times announced day-of via the Coachella app
+              </p>
+              <div style={{ display: "grid", gap: 8 }}>
+                {HEINEKEN_HOUSE.map((a, i) => (
+                  <a key={i} href={spotifyUrl(a.spotifyId, a.name)} target="_blank" rel="noopener noreferrer"
+                    style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      background: "var(--card)", borderRadius: 8, padding: "10px 14px",
+                      border: "1px solid var(--border)", textDecoration: "none", color: "var(--text)",
+                      transition: "all 0.15s"
+                    }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{a.name}</div>
+                      {a.note && (
+                        <span style={{
+                          fontSize: 10, color: "#00A650", fontWeight: 600,
+                          background: "rgba(0,166,80,0.1)", padding: "1px 6px", borderRadius: 4, marginTop: 2, display: "inline-block"
+                        }}>{a.note}</span>
+                      )}
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DB954">
+                      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                    </svg>
+                  </a>
+                ))}
+              </div>
+              <button onClick={() => setShowHeineken(false)} style={{
                 position: "absolute", top: 16, right: 16, background: "none",
                 border: "none", fontSize: 24, cursor: "pointer", color: "var(--brown)"
               }}>✕</button>
@@ -943,6 +1162,42 @@ function App() {
                   </svg>
                   Listen on Spotify
                 </a>
+
+                {/* Artist-specific notices */}
+                {NOTICES.filter(n => n.artist === selectedArtist.name).map((n, i) => (
+                  <div key={i} style={{
+                    marginTop: 12, background: n.type === "canceled" ? "#FFF0F0" : "rgba(242,204,143,0.2)",
+                    borderRadius: 8, padding: "10px 14px",
+                    border: `1px solid ${n.type === "canceled" ? "rgba(230,57,70,0.2)" : "rgba(242,204,143,0.4)"}`
+                  }}>
+                    <div style={{
+                      fontSize: 12, fontWeight: 600,
+                      color: n.type === "canceled" ? "var(--red)" : "#8B6914"
+                    }}>
+                      {n.type === "canceled" ? "✕ " : "⚠ "}{n.text}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Guest appearances */}
+                {GUEST_APPEARANCES[selectedArtist.name] && (
+                  <div style={{ marginTop: 16 }}>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--brown)", marginBottom: 6 }}>
+                      Guest Appearances (Weekend 1)
+                    </h4>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {GUEST_APPEARANCES[selectedArtist.name].map((g, i) => (
+                        <span key={i} style={{
+                          background: "rgba(242,204,143,0.2)", border: "1px solid rgba(242,204,143,0.4)",
+                          borderRadius: 16, padding: "3px 10px", fontSize: 12, color: "var(--text)", fontWeight: 500
+                        }}>{g}</span>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: 10, color: "var(--brown)", marginTop: 4, fontStyle: "italic" }}>
+                      May or may not repeat for Weekend 2
+                    </p>
+                  </div>
+                )}
 
                 {/* Setlist */}
                 {selectedArtist.setlist && selectedArtist.setlist.length > 0 && (
