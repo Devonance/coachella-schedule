@@ -25,9 +25,11 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     #root { min-height: 100vh; }
     /* Custom range slider */
-    input[type="range"] { -webkit-appearance: none; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.15); outline: none; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; }
-    input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; }
+    input[type="range"] { -webkit-appearance: none; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.15); outline: none; touch-action: none; padding: 8px 0; margin: 0; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+    input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+    input[type="range"]::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; }
+    input[type="range"]::-moz-range-track { height: 8px; border-radius: 4px; }
     /* Loading screen */
     #loading { position: fixed; inset: 0; background: #3D405B; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s; }
     #loading h1 { font-family: 'Playfair Display', serif; color: #F2CC8F; font-size: 36px; font-weight: 900; }
@@ -941,9 +943,15 @@ function App() {
               </p>
 
               {/* ── Time scrubber inside map ── */}
-              <div style={{
-                background: "var(--navy)", borderRadius: 10, padding: "10px 16px", marginBottom: 16
-              }}>
+              <div
+                onMouseDown={e => e.stopPropagation()}
+                onTouchStart={e => e.stopPropagation()}
+                onTouchMove={e => e.stopPropagation()}
+                style={{
+                  background: "var(--navy)", borderRadius: 10, padding: "10px 16px", marginBottom: 16,
+                  touchAction: "none", position: "relative", zIndex: 10
+                }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span className="mono" style={{ fontSize: 14, color: "var(--gold)", fontWeight: 700 }}>
                     {minToTime(scrubberMin)}
@@ -957,7 +965,11 @@ function App() {
                 </div>
                 <input type="range" min={GRID_START} max={GRID_END} value={scrubberMin}
                   onChange={e => setScrubberMin(Number(e.target.value))}
-                  style={{ width: "100%", accentColor: "var(--terra)", cursor: "pointer" }}
+                  onMouseDown={e => e.stopPropagation()}
+                  onTouchStart={e => e.stopPropagation()}
+                  onTouchMove={e => e.stopPropagation()}
+                  onPointerDown={e => e.stopPropagation()}
+                  style={{ width: "100%", accentColor: "var(--terra)", cursor: "pointer", touchAction: "none", position: "relative", zIndex: 11 }}
                 />
                 {/* Now playing badges */}
                 <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
