@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coachella 2026 Weekend 2 — Schedule Planner</title>
+  <meta name="description" content="Interactive schedule planner for Coachella 2026 Weekend 2 (April 17-19). Browse performers, build your personal plan, detect conflicts, and export.">
+  <meta property="og:title" content="Coachella 2026 Weekend 2 — Schedule Planner">
+  <meta property="og:description" content="Plan your perfect Coachella Weekend 2. All stages, set times, Spotify links, setlists, and conflict detection.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://devonance.github.io/coachella-schedule/">
+  <meta name="theme-color" content="#3D405B">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌵</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.2/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: #F5F0E8; color: #1A1A1A; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+    .playfair { font-family: 'Playfair Display', serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    #root { min-height: 100vh; }
+    /* Custom range slider */
+    input[type="range"] { -webkit-appearance: none; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.15); outline: none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; }
+    input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; }
+    /* Loading screen */
+    #loading { position: fixed; inset: 0; background: #3D405B; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s; }
+    #loading h1 { font-family: 'Playfair Display', serif; color: #F2CC8F; font-size: 36px; font-weight: 900; }
+    #loading p { color: rgba(245,240,232,0.5); font-size: 14px; margin-top: 8px; }
+    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    #loading .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #E07A5F; margin: 20px 4px 0; animation: pulse 1.2s ease-in-out infinite; }
+    #loading .dot:nth-child(2) { animation-delay: 0.2s; }
+    #loading .dot:nth-child(3) { animation-delay: 0.4s; }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <h1>COACHELLA '26</h1>
+    <p>Loading Weekend 2 Schedule...</p>
+    <div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+  </div>
+  <div id="root"></div>
+  <script type="text/babel" data-type="module">
+const { useState, useMemo, useCallback, useRef, Fragment } = React;
+
+/* ═══════════════════════════════════════════════════════════
+   COACHELLA 2026 WEEKEND 2 — INTERACTIVE SCHEDULE PLANNER
+   April 17–19, 2026 · Empire Polo Club, Indio, CA
+   ═══════════════════════════════════════════════════════════ */
+
+// ── GENRE CONFIG ──
+const GENRES = {
+  pop: { label: "Pop", color: "#E07A5F" },
+  hiphop: { label: "Hip-Hop", color: "#F4A261" },
+  electronic: { label: "Electronic", color: "#7B68EE" },
+  rock: { label: "Rock / Punk", color: "#E63946" },
+  indie: { label: "Indie", color: "#457B9D" },
+  rnb: { label: "R&B / Soul", color: "#9B5DE5" },
+  latin: { label: "Latin", color: "#F9C74F" },
+  kpop: { label: "K/J/P-Pop", color: "#F72585" },
+  jazz: { label: "Jazz", color: "#2A9D8F" },
+  dnb: { label: "D&B / Bass", color: "#06D6A0" },
+  other: { label: "Other", color: "#ADB5BD" },
+};
+
+// ── STAGES ──
+const STAGES = {
+  coachella: { name: "Coachella Stage", short: "MAIN", color: "#E07A5F", mapX: 50, mapY: 8 },
+  outdoor: { name: "Outdoor Theatre", short: "OUTDR", color: "#3D405B", mapX: 78, mapY: 10 },
+  mojave: { name: "Mojave", short: "MOJV", color: "#81B29A", mapX: 62, mapY: 52 },
+  sahara: { name: "Sahara", short: "SHRA", color: "#F2CC8F", mapX: 22, mapY: 78 },
+  gobi: { name: "Gobi", short: "GOBI", color: "#E07A5F", mapX: 65, mapY: 38 },
+  sonora: { name: "Sonora", short: "SNRA", color: "#9B5DE5", mapX: 63, mapY: 24 },
+  yuma: { name: "Yuma", short: "YUMA", color: "#457B9D", mapX: 12, mapY: 22 },
+  quasar: { name: "Quasar", short: "QSAR", color: "#06D6A0", mapX: 42, mapY: 68 },
+  dolab: { name: "Do LaB", short: "DoLB", color: "#F72585", mapX: 18, mapY: 58 },
+};
+
+// ── WALKING TIMES (minutes, avg) ──
+const WALK = {
+  "coachella-outdoor": 4, "coachella-gobi": 6, "coachella-mojave": 9, "coachella-sahara": 18,
+  "coachella-yuma": 10, "coachella-sonora": 9, "coachella-quasar": 14, "coachella-dolab": 12,
+  "outdoor-gobi": 4, "outdoor-mojave": 6, "outdoor-sonora": 5, "outdoor-sahara": 16,
+  "outdoor-yuma": 12, "outdoor-quasar": 13, "outdoor-dolab": 14,
+  "gobi-mojave": 4, "gobi-sonora": 3, "gobi-sahara": 12, "gobi-yuma": 8, "gobi-quasar": 10, "gobi-dolab": 9,
+  "mojave-sahara": 10, "mojave-sonora": 6, "mojave-yuma": 9, "mojave-quasar": 7, "mojave-dolab": 8,
+  "sahara-sonora": 14, "sahara-yuma": 9, "sahara-quasar": 7, "sahara-dolab": 6,
+  "sonora-yuma": 7, "sonora-quasar": 11, "sonora-dolab": 10,
+  "yuma-quasar": 12, "yuma-dolab": 8, "quasar-dolab": 7,
+};
+
+function getWalk(a, b) {
+  if (a === b) return 0;
+  return WALK[`${a}-${b}`] || WALK[`${b}-${a}`] || 10;
+}
+
+// ── SHUTTLE TIMES ──
+const SHUTTLES = [
+  { time: "13:00", label: "First shuttle departs to festival", type: "to" },
+  { time: "14:30", label: "Recommended arrival shuttle", type: "to" },
+  { time: "20:00", label: "Last shuttle to festival", type: "to" },
+  { time: "22:30", label: "Early return shuttle", type: "from" },
+  { time: "00:00", label: "Post-headliner return shuttle", type: "from" },
+  { time: "02:00", label: "Last return shuttle (~60min after music ends)", type: "from" },
+];
+
+// ── PERFORMER DATA ──
+// Compact: [name, stage, startTime, endTime, genre, spotifyId, isHeadliner, setlist[]]
+// spotifyId: Spotify artist ID (append to open.spotify.com/artist/) or null for search fallback
+const FRIDAY_RAW = [
+  ["Record Safari", "coachella", "16:15", "17:20", "other", null, false, []],
+  ["Teddy Swims", "coachella", "17:30", "18:20", "pop", "2oQX8QiEBMqCmBNJwQqiUi", false, []],
+  ["The xx", "coachella", "19:00", "19:55", "indie", "3iOvXCl6edW5Um0fXEBRXy", false, []],
+  ["Sabrina Carpenter", "coachella", "21:05", "22:35", "pop", "74KM79TiuVKeVCqs8QtB0B", true, ["House Tour","Taste","Busy Woman","Manchild","When Did You Get Hot?","Please Please Please","We Almost Broke Up Again Last Night","Nobody's Son","because i liked a boy","My Man on Willpower","Go Go Juice","Such A Funny Way","Sugar Talking","Don't Smile","Feather","Bed Chem","Juno","Espresso","Goodbye","Tears"]],
+  ["Anyma (Æden)", "coachella", "00:00", "01:30", "electronic", "0Z3MBiGkFsD6fz1cCR3hAK", true, []],
+  ["Tiffany Tyson", "outdoor", "14:50", "15:50", "rnb", null, false, []],
+  ["Dabeull", "outdoor", "16:00", "16:50", "electronic", "2aBsnGGdSwqYNFP1HcVGfC", false, []],
+  ["Lykke Li", "outdoor", "17:20", "18:10", "indie", "3li9FHBZ7uesGnbIP31cRS", false, []],
+  ["Dijon", "outdoor", "18:40", "19:30", "rnb", "0JFBJccMbKIfWPceULOKBo", false, []],
+  ["Turnstile", "outdoor", "20:05", "21:00", "rock", "5SHpGqkY2wEYTsqQSMb3fp", false, []],
+  ["Disclosure", "outdoor", "22:35", "23:50", "electronic", "6nB0iY1cjSY1KyhYyuIIKH", false, []],
+  ["Massio", "sahara", "14:30", "15:35", "electronic", null, false, []],
+  ["Youna", "sahara", "15:45", "16:35", "electronic", null, false, []],
+  ["HUGEL", "sahara", "16:50", "17:50", "electronic", "22FTMlCVh64CWXqO0vQxCX", false, []],
+  ["Marlon Hoffstadt", "sahara", "18:15", "19:15", "electronic", "1CDnSmkJoRZBYikDiH0SqR", false, []],
+  ["KATSEYE", "sahara", "20:00", "20:45", "kpop", "6MF35M6RvRj3jfgP2cxoXi", false, []],
+  ["Levity", "sahara", "21:15", "22:20", "dnb", "1PbO7aQiVeKbGp8GYWDL9C", false, []],
+  ["Swae Lee", "sahara", "22:50", "23:40", "hiphop", "1zNqQNIdeOUZHb8zbZRFMX", false, []],
+  ["Sexyy Red", "sahara", "00:05", "00:55", "hiphop", "3NuWVlMPfNPBPWyMBXqbcP", false, []],
+  ["Novasoul", "mojave", "14:00", "14:50", "indie", null, false, []],
+  ["Slayyyter", "mojave", "15:00", "15:45", "pop", "7v1SBmMSmV9sJkPRAKsJ7d", false, []],
+  ["BINI", "mojave", "16:15", "17:00", "kpop", "7mVJE6KKsF8I5GhKVRiXKP", false, []],
+  ["Central Cee", "mojave", "17:30", "18:15", "hiphop", "22YAk59KVjOPIvkDzO3WnF", false, []],
+  ["Devo", "mojave", "18:45", "19:40", "rock", "6GIhwRhQdVqqlKTjnQYFIs", false, []],
+  ["Moby", "mojave", "20:10", "21:00", "electronic", "4bw2Am3p9ji3mYsXNOpDGR", false, []],
+  ["Ethel Cain", "mojave", "22:35", "23:25", "indie", "1u0WXZPHNCP9k4sNIq2Buz", false, []],
+  ["Blood Orange", "mojave", "23:55", "00:45", "rnb", "3GBPw9NK25X1Wt2OUvOwY3", false, []],
+  ["Cahuilla Bird Singers", "gobi", "14:15", "14:45", "other", null, false, []],
+  ["Bob Baker Marionettes", "gobi", "14:55", "15:35", "other", null, false, []],
+  ["NewDad", "gobi", "16:00", "16:40", "indie", "4S0d4pyRrpGjXXN0oFXYwT", false, []],
+  ["Joyce Manor", "gobi", "17:10", "17:50", "rock", "5VFvdnxQGaOJIMHE1DjX3y", false, []],
+  ["CMAT", "gobi", "18:15", "18:55", "indie", "0BpfE2gZLnhqBCN8bm7RGt", false, []],
+  ["fakemink", "gobi", "19:20", "20:00", "indie", null, false, []],
+  ["Holly Humberstone", "gobi", "20:25", "21:10", "indie", "7kOBfn3lBNPASpqPkNpeWi", false, []],
+  ["Joost", "gobi", "21:50", "22:35", "electronic", "3JJJHIZz9ofdYqe58kPaLg", false, []],
+  ["Creepy Nuts", "gobi", "23:05", "23:55", "hiphop", "1GhPHrq36VKCY3ucVaZCpo", false, []],
+  ["Doom Dave", "sonora", "13:00", "13:40", "rock", null, false, []],
+  ["Febuary", "sonora", "13:40", "14:10", "indie", null, false, []],
+  ["Carolina Durante", "sonora", "14:35", "15:15", "rock", "4lDBkSJPKFCsr8Y3iQxwBv", false, []],
+  ["Wednesday", "sonora", "15:40", "16:20", "rock", "6iIx7xriJotV0JqzEdn4YH", false, []],
+  ["Freshwater", "sonora", "16:50", "17:30", "indie", null, false, []],
+  ["The Two Lips", "sonora", "18:00", "18:40", "rock", null, false, []],
+  ["Ninajirachi", "sonora", "19:10", "20:00", "electronic", "2GxSm57sMCCjdm0SJwjHKA", false, []],
+  ["Cachirula & Loojan", "sonora", "20:25", "21:05", "electronic", null, false, []],
+  ["Hot Mulligan", "sonora", "22:00", "22:45", "rock", "6NYt1YBLR2FsOGBLjGKDGf", false, []],
+  ["Not For Radio", "sonora", "23:50", "00:50", "electronic", null, false, []],
+  ["Sahar Z", "yuma", "13:00", "13:45", "electronic", null, false, []],
+  ["Jessica Brankka", "yuma", "13:45", "14:45", "electronic", null, false, []],
+  ["Arodes", "yuma", "14:45", "15:45", "electronic", null, false, []],
+  ["Groove Armada", "yuma", "15:45", "16:45", "electronic", "6QZ9gzaBJWpqFhAYzg8U3K", false, []],
+  ["Rossi. x Chloé Caillet", "yuma", "16:45", "18:00", "electronic", "4YPqbYjYFbYfSMRo429qXv", false, []],
+  ["Kettama", "yuma", "18:00", "19:15", "electronic", "0sQINFr5C9nHMPHEcGmGls", false, []],
+  ["Prospa", "yuma", "19:15", "20:30", "electronic", "6hglmrgARaNjq3CjsLhO6D", false, []],
+  ["Max Dean x Luke Dean", "yuma", "20:30", "21:45", "electronic", null, false, []],
+  ["Max Styler", "yuma", "21:45", "23:15", "electronic", "6aqEd8rHfGFKe4QoAFYag3", false, []],
+  ["Gordo", "yuma", "23:15", "00:55", "electronic", "1R5yMakJXbIzUCHFbZ4uV7", false, []],
+  ["Tiga", "quasar", "17:00", "19:00", "electronic", "4hOJQWKVLwt9ge1LbxSq23", false, []],
+  ["Deep Dish", "quasar", "19:00", "21:00", "electronic", "7e9THF27Bxo0aXJb1ALEiH", false, []],
+  ["PAWSA", "quasar", "21:00", "23:00", "electronic", "4E0HD2PMY8kQJIjlShrLUS", false, []],
+  ["ÆON:MODE b2b Blossom", "dolab", "13:00", "14:00", "electronic", null, false, []],
+  ["After Midnight", "dolab", "14:00", "15:00", "electronic", "02PtWxdccmWsJxCEj1u9Ee", false, []],
+  ["Alex Chapman b2b Zoe Gitter", "dolab", "15:00", "16:00", "electronic", null, false, []],
+  ["Alisha", "dolab", "16:00", "17:00", "electronic", null, false, []],
+  ["Ape Drums b2b Bontan", "dolab", "17:00", "18:00", "electronic", null, false, []],
+  ["Arthi", "dolab", "18:00", "19:00", "electronic", null, false, []],
+  ["Brothers Macklovitch", "dolab", "19:00", "20:00", "electronic", "3xbRK0tLM9ldYxKk0iAM1Y", false, []],
+  ["Champion", "dolab", "20:00", "21:00", "electronic", null, false, []],
+  ["Cquestt", "dolab", "21:00", "22:00", "electronic", null, false, []],
+  ["DJ Habibeats b2b Zeemuffin", "dolab", "22:00", "23:00", "electronic", null, false, []],
+  ["Drama (DJ Set)", "dolab", "23:00", "00:00", "electronic", null, false, []],
+];
+
+const SATURDAY_RAW = [
+  ["Jaqck Glam", "coachella", "16:15", "17:20", "electronic", null, false, []],
+  ["Addison Rae", "coachella", "17:30", "18:20", "pop", "7GlBOeep6PqTfFi59K9W3Y", false, []],
+  ["GIVĒON", "coachella", "19:00", "19:50", "rnb", "4fxd5Ee7UefO9CUJQvhVir", false, []],
+  ["The Strokes", "coachella", "21:00", "22:10", "rock", "0epOFNiUfyON9EYx7Tpr6V", false, []],
+  ["Justin Bieber", "coachella", "23:25", "01:00", "pop", "1uNFoZAHBGtllmzznpCI3s", true, ["SWAG era tracks","STAY (with The Kid LAROI)","Baby","Sorry","Where Are U Now","One Less Lonely Girl","Favorite Girl","With You (Chris Brown cover)","So Sick (Ne-Yo cover)","YUKON","DEVOTION (with Dijon)","I THINK YOU'RE SPECIAL (with Tems)","ESSENCE (with Tems & Wizkid)","DAISIES (with Mk.gee)"]],
+  ["Blondshell", "outdoor", "14:40", "15:25", "indie", "3InGlbfGMghZt1XGNZ0eMV", false, []],
+  ["Los Hermanos Flores", "outdoor", "15:55", "16:45", "latin", "6SkZXNJfKO3JYjXZZGq8Yp", false, []],
+  ["Alex G", "outdoor", "17:10", "18:00", "indie", "6lcTsmfRKSwWKYt2MaMqZp", false, []],
+  ["SOMBR", "outdoor", "19:05", "19:55", "indie", "4DkANNjMWclASmOFp16HdT", false, []],
+  ["Labrinth", "outdoor", "20:30", "21:25", "pop", "2feDdbD5araYcm6JhFHHw7", false, []],
+  ["David Byrne", "outdoor", "22:20", "23:20", "rock", "1jJ6zvgclDBQIJcEWxE7O1", false, []],
+  ["Jack White", "mojave", "15:00", "15:45", "rock", "4rcPc22tIflXjmLJPVPnoE", false, []],
+  ["Fujii Kaze", "mojave", "16:30", "17:20", "kpop", "6bDWAcdtVR3WHz2xtiIPUi", false, []],
+  ["Royel Otis", "mojave", "17:50", "18:35", "indie", "0Tn3rT1XNQE0wl4xLuCiqQ", false, []],
+  ["Taemin", "mojave", "19:30", "20:20", "kpop", "3HVsfBidg9Vq6S30myVUnw", false, []],
+  ["PinkPantheress", "mojave", "20:55", "21:45", "pop", "78rUTD7y6Cy67W1RVzYs7t", false, []],
+  ["Interpol", "mojave", "22:15", "23:15", "rock", "3WaJSwtpBaGblMIXrPMfWi", false, []],
+  ["Seek-One", "sahara", "14:00", "14:45", "electronic", null, false, []],
+  ["TEED", "sahara", "14:50", "15:50", "electronic", "0g3NiCRhEv7M4SEDMrpItN", false, []],
+  ["ZULAN", "sahara", "16:00", "16:50", "electronic", null, false, []],
+  ["Hamdi", "sahara", "17:00", "17:55", "dnb", "3cFh2g1PuFbx3gm8hZcKia", false, []],
+  ["¥ØU$UK€ ¥UK1MAT$U", "sahara", "18:15", "19:10", "electronic", "0BEmPeY22LTrZJFFP2xIyk", false, []],
+  ["Nine Inch Noize", "sahara", "20:00", "20:45", "rock", "0X380XXQSNBYuleKzav5UO", false, []],
+  ["REZZ", "sahara", "21:10", "22:05", "electronic", "3sCnATAPn1epEi20iHLAeT", false, []],
+  ["Adriatique", "sahara", "22:30", "23:25", "electronic", "0eBb1ZH1JCIFZYxQPTLupP", false, []],
+  ["Worship", "sahara", "23:55", "00:55", "dnb", "0LfBsmiHkJeGFMfFCxBi8I", false, []],
+  ["Noga Erez", "gobi", "14:05", "14:50", "electronic", "0y3XHvDHNhJocAGlL8GJjn", false, []],
+  ["WHATMORE", "gobi", "16:05", "16:45", "electronic", null, false, []],
+  ["Luísa Sonza", "gobi", "17:10", "17:50", "latin", "0qkv2cYpSLmAXGd6B49kWf", false, []],
+  ["Geese", "gobi", "18:15", "19:00", "rock", "5CKBDsJlhDtWMEzGZjjEgb", false, []],
+  ["Davido", "gobi", "19:50", "20:35", "rnb", "0Y3agQaa6g2r0YmHPOO9rh", false, []],
+  ["BIA", "gobi", "21:00", "21:45", "hiphop", "0VF21vEJfneIBcrXrBJXvO", false, []],
+  ["Morat", "gobi", "22:10", "23:00", "latin", "1nRjiGdqMJGCslfN2DqeEf", false, []],
+  ["Triste Juventud", "sonora", "13:00", "14:00", "latin", null, false, []],
+  ["Die Spitz", "sonora", "14:00", "14:40", "rock", null, false, []],
+  ["Freak Slug", "sonora", "15:10", "15:50", "rock", null, false, []],
+  ["Ecca Vandal", "sonora", "16:20", "17:00", "rock", "2q3Fkb8a69EwJbPfeySqF5", false, []],
+  ["Ceremony", "sonora", "17:30", "18:10", "rock", "4YLk2T9gF5IS2kOmzaFfhX", false, []],
+  ["rusowsky", "sonora", "18:40", "19:20", "indie", "5Qoem6jA8kaZvHb4WVpWqH", false, []],
+  ["54 Ultra", "sonora", "19:50", "20:30", "electronic", null, false, []],
+  ["Mind Enterprises", "sonora", "21:45", "22:35", "electronic", "0sXBi9VJ2gF4J7RJ0iQ0za", false, []],
+  ["Yamagucci", "yuma", "13:00", "14:00", "electronic", null, false, []],
+  ["GENESI", "yuma", "14:00", "15:00", "electronic", null, false, []],
+  ["Riordan", "yuma", "15:00", "16:15", "electronic", null, false, []],
+  ["Mahmut Orhan", "yuma", "16:15", "17:30", "electronic", "7EZJnRODg8A1WcfGbCYyTx", false, []],
+  ["Ben Sterling", "yuma", "17:30", "18:45", "electronic", "6eM2qKwPFBBBqt4SLhZXv1", false, []],
+  ["SOSA", "yuma", "18:45", "20:15", "electronic", "3JlN0MeWVJq0vjvsvWCRZ5", false, []],
+  ["Bedouin", "yuma", "20:15", "21:45", "electronic", "0Nmw1sUWWiPfQnFhFTMLsN", false, []],
+  ["Boys Noize", "yuma", "21:45", "23:00", "electronic", "1SQRv42e4PjEYfPhS0Tk9E", false, []],
+  ["Armin van Buuren x Adam Beyer", "yuma", "23:00", "00:55", "electronic", "0SfsnGyD8FpIN4U4WCkBbP", false, []],
+  ["Joezi", "quasar", "17:00", "19:00", "electronic", "0ot2PWDhXsRVdujOcFOeDF", false, []],
+  ["Afrojack x Shimza", "quasar", "19:00", "21:00", "electronic", "3JFCiivRUO1cyIgNs9G00R", false, []],
+  ["David Guetta", "quasar", "21:00", "23:00", "electronic", "1Cs0zKBU1kc0i8ypK3B9ai", false, []],
+  ["Eliza Rose", "dolab", "13:00", "14:00", "electronic", "5Ss5hN3kFdSSxNrU3X7OJu", false, []],
+  ["Gudfella", "dolab", "14:00", "15:00", "electronic", null, false, []],
+  ["Level Up b2b Mary Droppinz", "dolab", "15:00", "16:00", "electronic", null, false, []],
+  ["Lyny", "dolab", "16:00", "17:00", "electronic", null, false, []],
+  ["Maxi Meraki", "dolab", "17:00", "18:00", "electronic", null, false, []],
+  ["Natascha Polké", "dolab", "18:00", "19:00", "electronic", null, false, []],
+  ["Neumonic", "dolab", "19:00", "20:00", "electronic", null, false, []],
+  ["Patricio", "dolab", "20:00", "21:00", "electronic", null, false, []],
+  ["SBTRKT", "dolab", "21:00", "22:00", "electronic", "15iVAtD3s3FsQR4w1v6M0P", false, []],
+  ["Seth Troxler", "dolab", "22:00", "23:00", "electronic", "6Lf6R7cSgG4twMaNKJJqDN", false, []],
+];
+
+const SUNDAY_RAW = [
+  ["Gabe Real", "coachella", "14:45", "15:30", "electronic", null, false, []],
+  ["Tijuana Panthers", "coachella", "15:40", "16:15", "rock", "5c4ep2EUSmqTJOCMUNGpkH", false, []],
+  ["Wet Leg", "coachella", "16:45", "17:30", "indie", "2TwOrUcYnAlIiKmVQkQIlp", false, []],
+  ["Major Lazer", "coachella", "18:10", "19:10", "electronic", "738wLrAtLtCtFOLvQBXOXp", false, []],
+  ["Young Thug", "coachella", "19:50", "20:40", "hiphop", "50co4Is1HCEo8bhOyUWKpn", false, []],
+  ["KAROL G", "coachella", "21:55", "23:30", "latin", "790FomKkXshlbRYZFtlgla", true, ["LATINA FOREVA","Un Gatito Me Llamó","OKI DOKI","Tá OK (REMIX)","EL MAKINON","S91","Tropicoqueta","Papasito","Negrita de Mis Pesares","Ese Hombre Es Malo","Mamiii","GATÚBELA","OJOS FERRARI","Bandida Entrenada","Ivonny Bonita","TQG","AMARGURA","Tusa","Mi Tierra","Si Antes Te Hubiera Conocido","PROVENZA"]],
+  ["Juicewon", "outdoor", "15:00", "15:50", "hiphop", null, false, []],
+  ["Gigi Perez", "outdoor", "16:00", "16:45", "indie", "4rXDk7N0m46nBPn3L6yW6T", false, []],
+  ["CLIPSE", "outdoor", "17:15", "18:10", "hiphop", "5CliPYZuDix3t9I0E2p0e3", false, []],
+  ["Foster the People", "outdoor", "18:45", "19:40", "indie", "7gP3bB2nilZXLfPHJhMdvc", false, []],
+  ["Laufey", "outdoor", "20:40", "21:40", "jazz", "7gW0r5CkdEUMm42mj8eaNG", false, []],
+  ["BIGBANG", "outdoor", "22:30", "23:30", "kpop", "4Kxlr1PRlDKEB0ekOCyHgX", false, []],
+  ["wyldeflower", "mojave", "14:30", "15:10", "indie", null, false, []],
+  ["Samia", "mojave", "15:15", "15:55", "indie", "3lJFnfMR0EQmBRqNfSjhRG", false, []],
+  ["Little Simz", "mojave", "16:25", "17:10", "hiphop", "6eXZu6O7nAUA5z6vLV51P6", false, []],
+  ["Suicidal Tendencies", "mojave", "17:35", "18:25", "rock", "3JKEjnSBbPkULPxmBjDd70", false, []],
+  ["Iggy Pop", "mojave", "19:10", "20:10", "rock", "381l9TZJ3OGgjKENpXFBMh", false, []],
+  ["FKA twigs", "mojave", "20:45", "22:00", "electronic", "6nB0iY1cjSY1KyhYyuIIKH", false, []],
+  ["LOBOMAN", "sahara", "14:30", "15:30", "electronic", null, false, []],
+  ["Girl Math (VNSSA x NALA)", "sahara", "15:35", "16:35", "electronic", "2FGbrr8wyYcFVj3MLkjKhP", false, []],
+  ["BUNT.", "sahara", "16:45", "17:45", "electronic", "13VPuOJILJ7V8t1hiODqhq", false, []],
+  ["Duke Dumont", "sahara", "18:10", "19:10", "electronic", "59sBjfEoiHam7GMbLkJBMH", false, []],
+  ["Mochakk", "sahara", "19:25", "20:25", "electronic", "62Hqa04h2Ap1jZy2psNp91", false, []],
+  ["Subtronics", "sahara", "21:05", "22:05", "dnb", "09C7KAlER0P4KMIRMKJTaO", false, []],
+  ["Kaskade", "sahara", "22:45", "23:55", "electronic", "6TQj5BFPooTa9cLhmGCDHD", false, []],
+  ["flowerovlove", "gobi", "14:05", "14:35", "indie", "7sDzBz0opVElrK4xubPWde", false, []],
+  ["The Chats", "gobi", "15:00", "15:40", "rock", "1YvFwC2VW37Cmc0qdKIWfe", false, []],
+  ["COBRAH", "gobi", "16:05", "16:50", "electronic", "6gUfvRNJWl5qcmMuBUoYkX", false, []],
+  ["Oklou", "gobi", "17:15", "18:00", "electronic", "5Gjj31Ws2suFP2qv14KYVU", false, []],
+  ["Black Flag", "gobi", "18:30", "19:05", "rock", "07SsfBRhZjjBiKsm62IqUe", false, []],
+  ["TOMORA", "gobi", "19:45", "20:35", "electronic", null, false, []],
+  ["The Rapture", "gobi", "21:05", "21:55", "rock", "0JgVDQx0TYj2CANnIXSIKZ", false, []],
+  ["Panda & Chok", "sonora", "13:00", "14:00", "electronic", null, false, []],
+  ["Glitterer", "sonora", "14:00", "14:40", "rock", "5Sw9N3GGEp8N0cV4VVhQyD", false, []],
+  ["Model/Actriz", "sonora", "15:10", "15:50", "rock", "1uKJJtXAqz2MfvTx5FGQWl", false, []],
+  ["Jane Remover", "sonora", "16:20", "17:00", "electronic", "6xnvNmSBF0FxhrRnPJAXui", false, []],
+  ["Los Retros", "sonora", "17:30", "18:10", "rnb", "71kGKidFfvt7KQFQwNjLDq", false, []],
+  ["RØZ", "sonora", "18:40", "19:30", "electronic", null, false, []],
+  ["DRAIN", "sonora", "20:00", "20:40", "rock", "7FY7gNqJaZjb3xZt2E1ISf", false, []],
+  ["French Police", "sonora", "21:10", "22:00", "rock", null, false, []],
+  ["LE YORA", "yuma", "13:00", "14:00", "electronic", null, false, []],
+  ["AZZECCA", "yuma", "14:00", "15:00", "electronic", null, false, []],
+  ["&friends", "yuma", "15:00", "16:15", "electronic", null, false, []],
+  ["MËSTIZA", "yuma", "16:15", "17:30", "electronic", null, false, []],
+  ["Carlita x Josh Baker", "yuma", "17:30", "19:00", "electronic", "6cmmbYGzgcRfxb0hwTEz6N", false, []],
+  ["Röyksopp", "yuma", "19:00", "20:30", "electronic", "5LoMTelFCYQJHSXhflEwkM", false, []],
+  ["WhoMadeWho", "yuma", "20:30", "22:00", "electronic", "0HNMnUhGFb7LJLasqhcfvR", false, []],
+  ["Green Velvet x AYYBO", "yuma", "22:00", "23:55", "electronic", "1iygqjVH7pSUmPXaJTDVjp", false, []],
+  ["Jazzy", "quasar", "16:00", "18:00", "electronic", null, false, []],
+  ["JOY (Anonymous)", "quasar", "18:00", "20:00", "electronic", null, false, []],
+  ["Fatboy Slim", "quasar", "20:00", "22:00", "electronic", "4Y7tXHSEejGu1vQ9bwDdXW", false, []],
+  ["Sam Alfred", "dolab", "13:00", "14:00", "electronic", null, false, []],
+  ["Sam Binga b2b Jialing", "dolab", "14:00", "15:00", "electronic", "2eSN5CMnAzIAdBdOUiIiEN", false, []],
+  ["Sarz", "dolab", "15:00", "16:00", "electronic", "0GhYbdnUUTbTvIHHE0Q1Ma", false, []],
+  ["Silva Bumpa", "dolab", "16:00", "17:00", "electronic", null, false, []],
+  ["Strawbry", "dolab", "17:00", "18:00", "electronic", null, false, []],
+  ["Tourist", "dolab", "18:00", "19:30", "electronic", "1G2r2hs0sfHnLDcT1T2BPQ", false, []],
+  ["X CLUB.", "dolab", "19:30", "21:00", "electronic", null, false, []],
+];
+
+// Parse raw data into objects
+function parsePerformers(raw, day) {
+  return raw.map(([name, stage, start, end, genre, spotifyId, headliner, setlist], i) => ({
+    id: `${day}-${i}`,
+    name, stage, startTime: start, endTime: end, genre, spotifyId, isHeadliner: headliner, setlist, day,
+    startMin: timeToMin(start), endMin: timeToMin(end),
+  }));
+}
+
+function timeToMin(t) {
+  const [h, m] = t.split(":").map(Number);
+  return h < 6 ? (h + 24) * 60 + m : h * 60 + m;
+}
+function minToTime(m) {
+  const h = Math.floor(m / 60) % 24;
+  const mi = m % 60;
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(mi).padStart(2, "0")} ${ampm}`;
+}
+function fmtTime(t) { return minToTime(timeToMin(t)); }
+
+const DAYS = {
+  friday: { label: "FRI", full: "Friday, April 17", performers: parsePerformers(FRIDAY_RAW, "friday") },
+  saturday: { label: "SAT", full: "Saturday, April 18", performers: parsePerformers(SATURDAY_RAW, "saturday") },
+  sunday: { label: "SUN", full: "Sunday, April 19", performers: parsePerformers(SUNDAY_RAW, "sunday") },
+};
+
+const GRID_START = 13 * 60; // 1:00 PM
+const GRID_END = 25 * 60 + 30; // 1:30 AM next day
+const MAIN_STAGES = ["coachella", "outdoor", "mojave", "sahara", "gobi", "sonora", "yuma", "quasar", "dolab"];
+
+function spotifyUrl(id, name) {
+  return id ? `https://open.spotify.com/artist/${id}` : `https://open.spotify.com/search/${encodeURIComponent(name)}`;
+}
+
+// ──────────────── APP ────────────────
+function App() {
+  const [activeDay, setActiveDay] = useState("friday");
+  const [activeGenres, setActiveGenres] = useState(new Set());
+  const [plan, setPlan] = useState({ friday: [], saturday: [], sunday: [] });
+  const [selectedArtist, setSelectedArtist] = useState(null);
+  const [showPlanner, setShowPlanner] = useState(false);
+  const [scrubberMin, setScrubberMin] = useState(GRID_START + 240);
+  const [showMap, setShowMap] = useState(false);
+  const planRef = useRef(null);
+
+  const dayData = DAYS[activeDay];
+  const performers = dayData.performers;
+  const currentPlan = plan[activeDay];
+
+  const filtered = useMemo(() => {
+    if (activeGenres.size === 0) return performers;
+    return performers.map(p => ({ ...p, dimmed: !activeGenres.has(p.genre) }));
+  }, [performers, activeGenres]);
+
+  const toggleGenre = (g) => {
+    setActiveGenres(prev => {
+      const next = new Set(prev);
+      next.has(g) ? next.delete(g) : next.add(g);
+      return next;
+    });
+  };
+
+  const addToPlan = useCallback((perf) => {
+    setPlan(prev => {
+      const day = prev[perf.day];
+      if (day.find(p => p.id === perf.id)) return prev;
+      return { ...prev, [perf.day]: [...day, perf].sort((a, b) => a.startMin - b.startMin) };
+    });
+  }, []);
+
+  const removeFromPlan = useCallback((perf) => {
+    setPlan(prev => ({
+      ...prev, [perf.day]: prev[perf.day].filter(p => p.id !== perf.id)
+    }));
+  }, []);
+
+  const isPlanned = (p) => currentPlan.some(x => x.id === p.id);
+
+  // Conflict detection
+  const conflicts = useMemo(() => {
+    const c = [];
+    for (let i = 0; i < currentPlan.length; i++) {
+      for (let j = i + 1; j < currentPlan.length; j++) {
+        const a = currentPlan[i], b = currentPlan[j];
+        const walk = getWalk(a.stage, b.stage);
+        if (a.startMin < b.endMin && b.startMin < a.endMin) {
+          const overlap = Math.min(a.endMin, b.endMin) - Math.max(a.startMin, b.startMin);
+          c.push({ a, b, type: "overlap", overlap, walk });
+        } else if (b.startMin - a.endMin < walk && b.startMin > a.startMin) {
+          c.push({ a, b, type: "walking", gap: b.startMin - a.endMin, walk });
+        }
+      }
+    }
+    return c;
+  }, [currentPlan]);
+
+  const hasConflict = (p) => conflicts.some(c => c.a.id === p.id || c.b.id === p.id);
+
+  // Export planner as image
+  const exportPlan = () => {
+    if (!planRef.current) return;
+    const el = planRef.current;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 800;
+    canvas.height = Math.max(600, currentPlan.length * 80 + 200);
+    ctx.fillStyle = "#F5F0E8";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#1A1A1A";
+    ctx.font = "bold 28px serif";
+    ctx.fillText(`Coachella 2026 — ${dayData.full}`, 30, 50);
+    ctx.font = "16px sans-serif";
+    ctx.fillStyle = "#6B5B4F";
+    ctx.fillText("My Personal Schedule", 30, 78);
+    let y = 120;
+    currentPlan.forEach((p, i) => {
+      const hasC = hasConflict(p);
+      ctx.fillStyle = hasC ? "#FFF0F0" : "#FFFFFF";
+      ctx.fillRect(30, y, 740, 60);
+      ctx.strokeStyle = hasC ? "#E63946" : "#E0D8CC";
+      ctx.strokeRect(30, y, 740, 60);
+      ctx.fillStyle = GENRES[p.genre]?.color || "#888";
+      ctx.fillRect(30, y, 5, 60);
+      ctx.fillStyle = "#1A1A1A";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText(p.name, 50, y + 25);
+      ctx.font = "13px sans-serif";
+      ctx.fillStyle = "#6B5B4F";
+      ctx.fillText(`${fmtTime(p.startTime)} – ${fmtTime(p.endTime)}  ·  ${STAGES[p.stage]?.name}`, 50, y + 45);
+      if (i < currentPlan.length - 1) {
+        const next = currentPlan[i + 1];
+        const w = getWalk(p.stage, next.stage);
+        ctx.fillStyle = "#ADB5BD";
+        ctx.font = "italic 11px sans-serif";
+        ctx.fillText(`↓ ${w} min walk to ${STAGES[next.stage]?.name}`, 50, y + 72);
+      }
+      y += 80;
+    });
+    if (conflicts.length > 0) {
+      y += 20;
+      ctx.fillStyle = "#E63946";
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillText(`⚠ ${conflicts.length} conflict${conflicts.length > 1 ? "s" : ""} detected`, 30, y);
+    }
+    const link = document.createElement("a");
+    link.download = `coachella-${activeDay}-plan.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  // CSS
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --sand: #F5F0E8; --card: #FFFCF7; --terra: #E07A5F; --navy: #3D405B;
+      --sage: #81B29A; --gold: #F2CC8F; --brown: #6B5B4F; --text: #1A1A1A;
+      --border: #E0D8CC; --red: #E63946;
+    }
+    body { background: var(--sand); color: var(--text); font-family: 'DM Sans', sans-serif; }
+    .playfair { font-family: 'Playfair Display', serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  `;
+
+  return (
+    <>
+      <style>{css}</style>
+      <div style={{ minHeight: "100vh", background: "var(--sand)", position: "relative" }}>
+        {/* ── HEADER ── */}
+        <header style={{
+          background: "linear-gradient(180deg, #3D405B 0%, #2A2D3E 100%)",
+          color: "#F5F0E8", padding: "24px 20px 16px", position: "sticky", top: 0, zIndex: 50
+        }}>
+          <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+              <h1 className="playfair" style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.5 }}>
+                COACHELLA <span style={{ color: "var(--gold)" }}>'26</span>
+              </h1>
+              <span style={{ fontSize: 13, opacity: 0.6, letterSpacing: 2, textTransform: "uppercase" }}>
+                Weekend 2 · Schedule Planner
+              </span>
+            </div>
+            {/* Day tabs */}
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              {Object.entries(DAYS).map(([key, d]) => (
+                <button key={key} onClick={() => setActiveDay(key)} style={{
+                  padding: "8px 20px", borderRadius: 6, border: "none", cursor: "pointer",
+                  fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14,
+                  background: activeDay === key ? "var(--terra)" : "rgba(255,255,255,0.1)",
+                  color: activeDay === key ? "#fff" : "rgba(255,255,255,0.6)",
+                  transition: "all 0.2s",
+                }}>
+                  {d.label} {key === "friday" ? "17" : key === "saturday" ? "18" : "19"}
+                  {plan[key].length > 0 && (
+                    <span style={{
+                      marginLeft: 6, background: "rgba(255,255,255,0.2)", borderRadius: 10,
+                      padding: "1px 7px", fontSize: 11
+                    }}>{plan[key].length}</span>
+                  )}
+                </button>
+              ))}
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setShowMap(!showMap)} style={{
+                padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+                background: showMap ? "var(--sage)" : "transparent", color: "#fff",
+                cursor: "pointer", fontFamily: "'DM Sans'", fontSize: 13, fontWeight: 600
+              }}>
+                {showMap ? "✕ Map" : "🗺 Map"}
+              </button>
+              <button onClick={() => setShowPlanner(!showPlanner)} style={{
+                padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+                background: showPlanner ? "var(--terra)" : "transparent", color: "#fff",
+                cursor: "pointer", fontFamily: "'DM Sans'", fontSize: 13, fontWeight: 600
+              }}>
+                📋 My Plan {currentPlan.length > 0 && `(${currentPlan.length})`}
+                {conflicts.length > 0 && <span style={{ color: "#ff6b6b", marginLeft: 4 }}>⚠</span>}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* ── GENRE FILTERS ── */}
+        <div style={{
+          background: "var(--card)", borderBottom: "1px solid var(--border)",
+          padding: "10px 20px", position: "sticky", top: 108, zIndex: 40,
+          overflowX: "auto"
+        }} className="no-scrollbar">
+          <div style={{ display: "flex", gap: 6, maxWidth: 1400, margin: "0 auto", alignItems: "center" }}>
+            <span style={{ fontSize: 11, color: "var(--brown)", marginRight: 4, whiteSpace: "nowrap", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+              Filter:
+            </span>
+            {activeGenres.size > 0 && (
+              <button onClick={() => setActiveGenres(new Set())} style={{
+                padding: "4px 10px", borderRadius: 20, border: "1px solid var(--border)",
+                background: "transparent", cursor: "pointer", fontSize: 11, fontFamily: "'DM Sans'",
+                color: "var(--brown)"
+              }}>Clear all</button>
+            )}
+            {Object.entries(GENRES).map(([key, g]) => (
+              <button key={key} onClick={() => toggleGenre(key)} style={{
+                padding: "4px 12px", borderRadius: 20, border: "none", cursor: "pointer",
+                fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans'", whiteSpace: "nowrap",
+                background: activeGenres.has(key) ? g.color : "rgba(0,0,0,0.05)",
+                color: activeGenres.has(key) ? "#fff" : "var(--brown)",
+                transition: "all 0.15s",
+              }}>{g.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── MAIN CONTENT ── */}
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 12px", display: "flex", gap: 0 }}>
+          {/* Schedule Grid */}
+          <div style={{ flex: 1, overflowX: "auto", padding: "16px 0" }}>
+            <p style={{ fontSize: 13, color: "var(--brown)", marginBottom: 12, padding: "0 8px" }} className="playfair">
+              <strong style={{ fontSize: 18, color: "var(--text)" }}>{dayData.full}</strong>
+              {" "}· Gates open 1:00 PM · Music ends ~1:00 AM
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, gap: 0, minWidth: 1000 }}>
+              {/* Stage headers */}
+              <div />
+              {MAIN_STAGES.map(s => (
+                <div key={s} style={{
+                  textAlign: "center", padding: "8px 4px", position: "sticky", top: 150, zIndex: 30,
+                  background: "var(--sand)"
+                }}>
+                  <div style={{
+                    background: STAGES[s].color, color: "#fff", borderRadius: 6, padding: "6px 2px",
+                    fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase"
+                  }}>{STAGES[s].short}</div>
+                  <div style={{ fontSize: 9, color: "var(--brown)", marginTop: 2 }}>{STAGES[s].name}</div>
+                </div>
+              ))}
+              {/* Time rows — every 30 min from 1 PM to 1 AM */}
+              {Array.from({ length: 25 }, (_, i) => {
+                const min = GRID_START + i * 30;
+                const isHour = i % 2 === 0;
+                return (
+                  <React.Fragment key={i}>
+                    <div style={{
+                      height: 50, display: "flex", alignItems: "flex-start", justifyContent: "flex-end",
+                      paddingRight: 8, paddingTop: 2
+                    }}>
+                      {isHour && (
+                        <span className="mono" style={{ fontSize: 10, color: "var(--brown)", opacity: 0.7 }}>
+                          {minToTime(min)}
+                        </span>
+                      )}
+                    </div>
+                    {MAIN_STAGES.map(s => {
+                      const perfs = filtered.filter(p =>
+                        p.stage === s && p.startMin >= min && p.startMin < min + 30
+                      );
+                      return (
+                        <div key={`${i}-${s}`} style={{
+                          height: 50, borderTop: isHour ? "1px solid var(--border)" : "1px solid rgba(0,0,0,0.03)",
+                          position: "relative", padding: "2px 2px",
+                          background: scrubberMin >= min && scrubberMin < min + 30 ? "rgba(242,204,143,0.12)" : "transparent"
+                        }}>
+                          {perfs.map(p => {
+                            const dur = p.endMin - p.startMin;
+                            const h = Math.max(32, (dur / 30) * 50 - 4);
+                            const planned = isPlanned(p);
+                            const conflict = planned && hasConflict(p);
+                            const dimmed = p.dimmed;
+                            return (
+                              <div key={p.id} onClick={() => setSelectedArtist(p)} style={{
+                                position: "absolute", left: 2, right: 2,
+                                top: ((p.startMin - min) / 30) * 50,
+                                height: h, borderRadius: 6, padding: "4px 6px",
+                                background: dimmed ? "rgba(0,0,0,0.03)" : planned ? (conflict ? "#FFF0F0" : "#F0FFF4") : "var(--card)",
+                                border: planned ? (conflict ? "2px solid var(--red)" : `2px solid var(--sage)`) : "1px solid var(--border)",
+                                cursor: "pointer", overflow: "hidden", zIndex: 10,
+                                opacity: dimmed ? 0.3 : 1,
+                                transition: "all 0.15s",
+                                boxShadow: p.isHeadliner ? `0 0 0 2px ${GENRES[p.genre]?.color || "#888"}` : "none"
+                              }}>
+                                <div style={{
+                                  fontSize: p.isHeadliner ? 12 : 10, fontWeight: 700,
+                                  lineHeight: 1.2, color: "var(--text)",
+                                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
+                                }}>
+                                  {p.isHeadliner && "★ "}{p.name}
+                                </div>
+                                {h > 36 && (
+                                  <div className="mono" style={{ fontSize: 9, color: "var(--brown)", marginTop: 1 }}>
+                                    {fmtTime(p.startTime)}
+                                  </div>
+                                )}
+                                {/* Genre dot */}
+                                <div style={{
+                                  position: "absolute", top: 4, right: 4, width: 6, height: 6,
+                                  borderRadius: 3, background: GENRES[p.genre]?.color || "#888"
+                                }} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── PLANNER SIDEBAR ── */}
+          {showPlanner && (
+            <div ref={planRef} style={{
+              width: 340, flexShrink: 0, background: "var(--card)", borderLeft: "1px solid var(--border)",
+              padding: 20, position: "sticky", top: 108, maxHeight: "calc(100vh - 108px)",
+              overflowY: "auto", overflowX: "hidden"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h2 className="playfair" style={{ fontSize: 20, fontWeight: 700 }}>My Plan</h2>
+                {currentPlan.length > 0 && (
+                  <button onClick={exportPlan} style={{
+                    padding: "5px 12px", borderRadius: 6, border: "1px solid var(--terra)",
+                    background: "transparent", color: "var(--terra)", cursor: "pointer",
+                    fontSize: 11, fontWeight: 600, fontFamily: "'DM Sans'"
+                  }}>📥 Save PNG</button>
+                )}
+              </div>
+
+              {/* Shuttle suggestion */}
+              <div style={{
+                background: "rgba(69,123,157,0.08)", borderRadius: 8, padding: 12, marginBottom: 16,
+                border: "1px solid rgba(69,123,157,0.15)"
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--navy)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>
+                  🚌 Shuttle Times
+                </div>
+                {SHUTTLES.map((s, i) => (
+                  <div key={i} style={{ fontSize: 11, color: "var(--brown)", marginTop: 3, display: "flex", gap: 6 }}>
+                    <span className="mono" style={{ fontWeight: 600, minWidth: 52 }}>{fmtTime(s.time)}</span>
+                    <span>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {currentPlan.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 30, color: "var(--brown)" }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>🌵</div>
+                  <p style={{ fontSize: 13 }}>Tap any artist to add them to your plan</p>
+                </div>
+              ) : (
+                <>
+                  {/* Conflicts */}
+                  {conflicts.length > 0 && (
+                    <div style={{
+                      background: "#FFF0F0", borderRadius: 8, padding: 12, marginBottom: 12,
+                      border: "1px solid rgba(230,57,70,0.2)"
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--red)", marginBottom: 4 }}>
+                        ⚠ {conflicts.length} Conflict{conflicts.length > 1 ? "s" : ""}
+                      </div>
+                      {conflicts.map((c, i) => (
+                        <div key={i} style={{ fontSize: 11, color: "#8B0000", marginTop: 4 }}>
+                          {c.type === "overlap"
+                            ? `${c.a.name} & ${c.b.name} overlap by ${c.overlap} min`
+                            : `Only ${c.gap} min gap between ${c.a.name} → ${c.b.name} (need ~${c.walk} min walk)`
+                          }
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Planned items */}
+                  {currentPlan.map((p, i) => {
+                    const conflict = hasConflict(p);
+                    const next = currentPlan[i + 1];
+                    const walkToNext = next ? getWalk(p.stage, next.stage) : null;
+                    return (
+                      <div key={p.id}>
+                        <div style={{
+                          background: conflict ? "#FFF8F8" : "#fff", borderRadius: 8,
+                          border: conflict ? "1px solid rgba(230,57,70,0.3)" : "1px solid var(--border)",
+                          padding: "10px 12px", position: "relative"
+                        }}>
+                          <div style={{
+                            position: "absolute", left: 0, top: 0, bottom: 0, width: 4,
+                            borderRadius: "8px 0 0 8px",
+                            background: GENRES[p.genre]?.color || "#888"
+                          }} />
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 13 }}>
+                                {p.isHeadliner && "★ "}{p.name}
+                              </div>
+                              <div className="mono" style={{ fontSize: 11, color: "var(--brown)", marginTop: 2 }}>
+                                {fmtTime(p.startTime)} – {fmtTime(p.endTime)}
+                              </div>
+                              <div style={{ fontSize: 11, color: "var(--brown)", marginTop: 1 }}>
+                                {STAGES[p.stage]?.name}
+                              </div>
+                            </div>
+                            <button onClick={() => removeFromPlan(p)} style={{
+                              background: "none", border: "none", cursor: "pointer",
+                              fontSize: 16, color: "var(--brown)", padding: 4
+                            }}>✕</button>
+                          </div>
+                        </div>
+                        {walkToNext !== null && (
+                          <div style={{
+                            textAlign: "center", padding: "4px 0", fontSize: 10,
+                            color: "var(--brown)", opacity: 0.7
+                          }}>
+                            ↓ ~{walkToNext} min walk to {STAGES[next.stage]?.name}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── TIMELINE SCRUBBER ── */}
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--navy)",
+          padding: "8px 20px 12px", zIndex: 50
+        }}>
+          <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <span className="mono" style={{ fontSize: 12, color: "var(--gold)", fontWeight: 600 }}>
+                {minToTime(scrubberMin)}
+              </span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
+                Drag to see who's playing at any time
+              </span>
+              <span className="mono" style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
+                1:00 PM → 1:00 AM
+              </span>
+            </div>
+            <input type="range" min={GRID_START} max={GRID_END} value={scrubberMin}
+              onChange={e => setScrubberMin(Number(e.target.value))}
+              style={{ width: "100%", accentColor: "var(--terra)", cursor: "pointer" }}
+            />
+            {/* Now playing badges */}
+            <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+              {MAIN_STAGES.slice(0, 7).map(s => {
+                const playing = performers.find(p => p.stage === s && p.startMin <= scrubberMin && p.endMin > scrubberMin);
+                if (!playing) return null;
+                return (
+                  <div key={s} onClick={() => setSelectedArtist(playing)} style={{
+                    padding: "3px 8px", borderRadius: 4, cursor: "pointer",
+                    background: STAGES[s].color, fontSize: 10, color: "#fff", fontWeight: 600,
+                    opacity: 0.9, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+                  }}>
+                    <span style={{ opacity: 0.7 }}>{STAGES[s].short}</span> {playing.name}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ── MAP OVERLAY ── */}
+        {showMap && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex",
+            alignItems: "center", justifyContent: "center", padding: 20
+          }} onClick={() => setShowMap(false)}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: "var(--sand)", borderRadius: 16, padding: 24,
+              maxWidth: 600, width: "100%", maxHeight: "90vh", overflowY: "auto",
+              position: "relative"
+            }}>
+              <h3 className="playfair" style={{ fontSize: 22, marginBottom: 4 }}>Festival Map</h3>
+              <p style={{ fontSize: 12, color: "var(--brown)", marginBottom: 16 }}>
+                Hover a stage to see who's playing at {minToTime(scrubberMin)}
+              </p>
+              <svg viewBox="0 0 200 200" style={{ width: "100%", background: "#4a7c59", borderRadius: 12 }}>
+                {/* Ground texture */}
+                <rect width="200" height="200" fill="#4a7c59" rx="12" />
+                <rect x="0" y="0" width="200" height="30" fill="#3D6B4A" rx="12" />
+                {/* Stage markers */}
+                {Object.entries(STAGES).map(([key, s]) => {
+                  const playing = performers.find(p => p.stage === key && p.startMin <= scrubberMin && p.endMin > scrubberMin);
+                  const planned = currentPlan.some(p => p.stage === key);
+                  const cx = s.mapX, cy = s.mapY;
+                  return (
+                    <g key={key} style={{ cursor: "pointer" }} onClick={() => {/* could filter */}}>
+                      {/* Glow if artist playing */}
+                      {playing && (
+                        <circle cx={cx} cy={cy} r={14} fill={GENRES[playing.genre]?.color || s.color} opacity={0.25}>
+                          <animate attributeName="r" values="12;16;12" dur="2s" repeatCount="indefinite" />
+                        </circle>
+                      )}
+                      <circle cx={cx} cy={cy} r={8} fill={s.color} stroke="#fff" strokeWidth={1.5} />
+                      {planned && <circle cx={cx + 7} cy={cy - 7} r={3} fill="var(--terra)" stroke="#fff" strokeWidth={0.8} />}
+                      <text x={cx} y={cy + 16} textAnchor="middle" fill="#fff" fontSize={5} fontWeight="bold" fontFamily="sans-serif">
+                        {s.short}
+                      </text>
+                      {playing && (
+                        <text x={cx} y={cy + 22} textAnchor="middle" fill="#FFE" fontSize={3.5} fontFamily="sans-serif" opacity={0.9}>
+                          {playing.name.length > 18 ? playing.name.slice(0, 16) + "…" : playing.name}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+                {/* Legend */}
+                <text x="5" y="195" fill="rgba(255,255,255,0.4)" fontSize="4" fontFamily="sans-serif">
+                  🧭 N ↑ · Empire Polo Club, Indio CA
+                </text>
+              </svg>
+              <button onClick={() => setShowMap(false)} style={{
+                position: "absolute", top: 16, right: 16, background: "none",
+                border: "none", fontSize: 24, cursor: "pointer", color: "var(--brown)"
+              }}>✕</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── ARTIST MODAL ── */}
+        {selectedArtist && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.6)", zIndex: 200, display: "flex",
+            alignItems: "center", justifyContent: "center", padding: 20
+          }} onClick={() => setSelectedArtist(null)}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: "var(--card)", borderRadius: 16, maxWidth: 480, width: "100%",
+              maxHeight: "85vh", overflowY: "auto", position: "relative"
+            }}>
+              {/* Genre accent bar */}
+              <div style={{
+                height: 6, borderRadius: "16px 16px 0 0",
+                background: GENRES[selectedArtist.genre]?.color || "#888"
+              }} />
+              <div style={{ padding: "20px 24px 24px" }}>
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    {selectedArtist.isHeadliner && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1,
+                        color: "var(--terra)", marginBottom: 4, display: "block"
+                      }}>★ Headliner</span>
+                    )}
+                    <h2 className="playfair" style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.1 }}>
+                      {selectedArtist.name}
+                    </h2>
+                  </div>
+                  <button onClick={() => setSelectedArtist(null)} style={{
+                    background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "var(--brown)", padding: 4
+                  }}>✕</button>
+                </div>
+
+                {/* Stage & time */}
+                <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{
+                    background: STAGES[selectedArtist.stage]?.color, color: "#fff",
+                    padding: "3px 10px", borderRadius: 4, fontSize: 12, fontWeight: 600
+                  }}>{STAGES[selectedArtist.stage]?.name}</span>
+                  <span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>
+                    {fmtTime(selectedArtist.startTime)} – {fmtTime(selectedArtist.endTime)}
+                  </span>
+                  <span style={{
+                    background: GENRES[selectedArtist.genre]?.color, color: "#fff",
+                    padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600
+                  }}>{GENRES[selectedArtist.genre]?.label}</span>
+                </div>
+
+                {/* Duration */}
+                <p style={{ fontSize: 12, color: "var(--brown)", marginTop: 8 }}>
+                  Set length: {selectedArtist.endMin - selectedArtist.startMin} minutes
+                </p>
+
+                {/* Spotify */}
+                <a href={spotifyUrl(selectedArtist.spotifyId, selectedArtist.name)}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    background: "#1DB954", color: "#fff", padding: "10px 20px",
+                    borderRadius: 24, fontSize: 14, fontWeight: 700, marginTop: 16,
+                    textDecoration: "none", fontFamily: "'DM Sans'"
+                  }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                  </svg>
+                  Listen on Spotify
+                </a>
+
+                {/* Setlist */}
+                {selectedArtist.setlist && selectedArtist.setlist.length > 0 && (
+                  <div style={{ marginTop: 20 }}>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--brown)", marginBottom: 8 }}>
+                      Setlist (from Weekend 1)
+                    </h4>
+                    <div style={{
+                      background: "rgba(0,0,0,0.03)", borderRadius: 8, padding: 12
+                    }}>
+                      {selectedArtist.setlist.map((song, i) => (
+                        <div key={i} style={{
+                          fontSize: 12, padding: "3px 0",
+                          borderBottom: i < selectedArtist.setlist.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none",
+                          display: "flex", gap: 8
+                        }}>
+                          <span className="mono" style={{ color: "var(--brown)", fontSize: 11, minWidth: 20, textAlign: "right" }}>{i + 1}</span>
+                          <span>{song}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Conflict check */}
+                {isPlanned(selectedArtist) && hasConflict(selectedArtist) && (
+                  <div style={{
+                    marginTop: 16, background: "#FFF0F0", borderRadius: 8, padding: 12,
+                    border: "1px solid rgba(230,57,70,0.2)"
+                  }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--red)" }}>⚠ Schedule Conflict</div>
+                    {conflicts.filter(c => c.a.id === selectedArtist.id || c.b.id === selectedArtist.id).map((c, i) => {
+                      const other = c.a.id === selectedArtist.id ? c.b : c.a;
+                      return (
+                        <div key={i} style={{ fontSize: 11, color: "#8B0000", marginTop: 4 }}>
+                          {c.type === "overlap"
+                            ? `Overlaps with ${other.name} by ${c.overlap} min`
+                            : `Only ${c.gap} min gap to reach ${other.name} (~${c.walk} min walk needed)`
+                          }
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Add/Remove button */}
+                <button
+                  onClick={() => {
+                    isPlanned(selectedArtist) ? removeFromPlan(selectedArtist) : addToPlan(selectedArtist);
+                  }}
+                  style={{
+                    width: "100%", padding: "12px", borderRadius: 8, border: "none",
+                    cursor: "pointer", fontSize: 14, fontWeight: 700, marginTop: 20,
+                    fontFamily: "'DM Sans'",
+                    background: isPlanned(selectedArtist) ? "rgba(0,0,0,0.05)" : "var(--terra)",
+                    color: isPlanned(selectedArtist) ? "var(--brown)" : "#fff",
+                  }}>
+                  {isPlanned(selectedArtist) ? "✕ Remove from Plan" : "＋ Add to My Plan"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom spacer for scrubber */}
+        <div style={{ height: 100 }} />
+      </div>
+    </>
+  );
+}
+
+// Mount the app
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
+// Hide loading screen
+setTimeout(() => {
+  const el = document.getElementById('loading');
+  if (el) { el.style.opacity = '0'; setTimeout(() => el.remove(), 500); }
+}, 100);
+  </script>
+</body>
+</html>
