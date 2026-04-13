@@ -48,7 +48,7 @@
   </div>
   <div id="root"></div>
   <script type="text/babel" data-type="module">
-const { useState, useMemo, useCallback, useRef, Fragment } = React;
+const { useState, useMemo, useCallback, useRef, useEffect, Fragment } = React;
 
 /* ═══════════════════════════════════════════════════════════
    COACHELLA 2026 WEEKEND 2 — INTERACTIVE SCHEDULE PLANNER
@@ -130,7 +130,7 @@ const FRIDAY_RAW = [
   ["Dijon", "outdoor", "18:40", "19:30", "rnb", "0JFBJccMbKIfWPceULOKBo", false, []],
   ["Turnstile", "outdoor", "20:05", "21:00", "rock", "5SHpGqkY2wEYTsqQSMb3fp", false, []],
   ["Disclosure", "outdoor", "22:35", "23:50", "electronic", "6nB0iY1cjSY1KyhYyuIIKH", false, []],
-  ["Massio", "sahara", "14:30", "15:35", "electronic", null, false, []],
+  ["Massio", "sahara", "14:30", "15:35", "electronic", "7sBQ7opbXfUczzXlB0ENB1", false, []],
   ["Youna", "sahara", "15:45", "16:35", "electronic", null, false, []],
   ["HUGEL", "sahara", "16:50", "17:50", "electronic", "22FTMlCVh64CWXqO0vQxCX", false, []],
   ["Marlon Hoffstadt", "sahara", "18:15", "19:15", "electronic", "1CDnSmkJoRZBYikDiH0SqR", false, []],
@@ -156,7 +156,7 @@ const FRIDAY_RAW = [
   ["Joost", "gobi", "21:50", "22:35", "electronic", "3JJJHIZz9ofdYqe58kPaLg", false, []],
   ["Creepy Nuts", "gobi", "23:05", "23:55", "hiphop", "1GhPHrq36VKCY3ucVaZCpo", false, []],
   ["Doom Dave", "sonora", "13:00", "13:40", "rock", null, false, []],
-  ["Febuary", "sonora", "13:40", "14:10", "indie", null, false, []],
+  ["February", "sonora", "13:40", "14:10", "indie", null, false, []],
   ["Carolina Durante", "sonora", "14:35", "15:15", "rock", "4lDBkSJPKFCsr8Y3iQxwBv", false, []],
   ["Wednesday", "sonora", "15:40", "16:20", "rock", "6iIx7xriJotV0JqzEdn4YH", false, []],
   ["Freshwater", "sonora", "16:50", "17:30", "indie", null, false, []],
@@ -165,9 +165,9 @@ const FRIDAY_RAW = [
   ["Cachirula & Loojan", "sonora", "20:25", "21:05", "electronic", null, false, []],
   ["Hot Mulligan", "sonora", "22:00", "22:45", "rock", "6NYt1YBLR2FsOGBLjGKDGf", false, []],
   ["Not For Radio", "sonora", "23:50", "00:50", "electronic", null, false, []],
-  ["Sahar Z", "yuma", "13:00", "13:45", "electronic", null, false, []],
-  ["Jessica Brankka", "yuma", "13:45", "14:45", "electronic", null, false, []],
-  ["Arodes", "yuma", "14:45", "15:45", "electronic", null, false, []],
+  ["Sahar Z", "yuma", "13:00", "13:45", "electronic", "47YdOgVXS5hzu5spoFFpHU", false, []],
+  ["Jessica Brankka", "yuma", "13:45", "14:45", "electronic", "0bC8yGVqpx20z9mLADTooz", false, []],
+  ["Arodes", "yuma", "14:45", "15:45", "electronic", "4p2f8wUtltMAFuIJB4NR47", false, []],
   ["Groove Armada", "yuma", "15:45", "16:45", "electronic", "6QZ9gzaBJWpqFhAYzg8U3K", false, []],
   ["Rossi. x Chloé Caillet", "yuma", "16:45", "18:00", "electronic", "4YPqbYjYFbYfSMRo429qXv", false, []],
   ["Kettama", "yuma", "18:00", "19:15", "electronic", "0sQINFr5C9nHMPHEcGmGls", false, []],
@@ -275,7 +275,7 @@ const SUNDAY_RAW = [
   ["Little Simz", "mojave", "16:25", "17:10", "hiphop", "6eXZu6O7nAUA5z6vLV51P6", false, []],
   ["Suicidal Tendencies", "mojave", "17:35", "18:25", "rock", "3JKEjnSBbPkULPxmBjDd70", false, []],
   ["Iggy Pop", "mojave", "19:10", "20:10", "rock", "381l9TZJ3OGgjKENpXFBMh", false, []],
-  ["FKA twigs", "mojave", "20:45", "22:00", "electronic", null, false, []],
+  ["FKA twigs", "mojave", "20:45", "22:00", "electronic", "6nB0iY1cjSY1KyhYyuIIKH", false, []],
   ["LOBOMAN", "sahara", "14:30", "15:30", "electronic", null, false, []],
   ["Girl Math (VNSSA x NALA)", "sahara", "15:35", "16:35", "electronic", "2FGbrr8wyYcFVj3MLkjKhP", false, []],
   ["BUNT.", "sahara", "16:45", "17:45", "electronic", "13VPuOJILJ7V8t1hiODqhq", false, []],
@@ -331,10 +331,10 @@ const HEINEKEN_HOUSE = [
   { name: "Sander Kleinenberg", spotifyId: "3ABT4rjDqKtFDowGsmmLyI", note: null },
   { name: "Wale", spotifyId: "67nwj3Y5sZQLl72VNUHEML", note: null },
   { name: "Zerb", spotifyId: "5CeLIuFg1GFOEFbBBPOiAV", note: null },
-  { name: "Kryptogram", spotifyId: null, note: null },
-  { name: "Niiko X Swae", spotifyId: null, note: null },
-  { name: "Nimino", spotifyId: null, note: null },
-  { name: "Oskar Med K", spotifyId: null, note: null },
+  { name: "Kryptogram", spotifyId: "184mGxeseZkY2w05Nr4Tui", note: null },
+  { name: "Niiko X Swae", spotifyId: "7ui1kBUIbujvJnIXxDjoWz", note: null },
+  { name: "Nimino", spotifyId: "5x0R3zoC09GMiRJomoexLV", note: null },
+  { name: "Oskar Med K", spotifyId: "28ntgpEkMU9Zm7F3gLDMhZ", note: null },
   { name: "REDKE", spotifyId: null, note: null },
 ];
 
@@ -410,7 +410,12 @@ function spotifyUrl(id, name) {
 function App() {
   const [activeDay, setActiveDay] = useState("friday");
   const [activeGenres, setActiveGenres] = useState(new Set());
-  const [plan, setPlan] = useState({ friday: [], saturday: [], sunday: [] });
+  const [plan, setPlan] = useState(() => {
+    try {
+      const saved = localStorage.getItem('coachella-plan');
+      return saved ? JSON.parse(saved) : { friday: [], saturday: [], sunday: [] };
+    } catch { return { friday: [], saturday: [], sunday: [] }; }
+  });
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [showPlanner, setShowPlanner] = useState(false);
   const [scrubberMin, setScrubberMin] = useState(GRID_START + 240);
@@ -419,6 +424,12 @@ function App() {
   const [showHeineken, setShowHeineken] = useState(false);
   const [mapSelectedStage, setMapSelectedStage] = useState(null);
   const planRef = useRef(null);
+  const headerRef = useRef(null);
+  const genreRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(108);
+  const [genreHeight, setGenreHeight] = useState(40);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const dayData = DAYS[activeDay];
   const performers = dayData.performers;
@@ -428,6 +439,38 @@ function App() {
     if (activeGenres.size === 0) return performers;
     return performers.map(p => ({ ...p, dimmed: !activeGenres.has(p.genre) }));
   }, [performers, activeGenres]);
+
+  const allPerformers = useMemo(() => [
+    ...DAYS.friday.performers,
+    ...DAYS.saturday.performers,
+    ...DAYS.sunday.performers,
+  ], []);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return allPerformers.filter(p => p.name.toLowerCase().includes(q)).slice(0, 12);
+  }, [searchQuery, allPerformers]);
+
+  const heinekenSearchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return HEINEKEN_HOUSE.filter(h => h.name.toLowerCase().includes(q));
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const measure = () => {
+      if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
+      if (genreRef.current) setGenreHeight(genreRef.current.offsetHeight);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('coachella-plan', JSON.stringify(plan));
+  }, [plan]);
 
   const toggleGenre = (g) => {
     setActiveGenres(prev => {
@@ -527,18 +570,11 @@ function App() {
 
   // CSS
   const css = `
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
       --sand: #F5F0E8; --card: #FFFCF7; --terra: #E07A5F; --navy: #3D405B;
       --sage: #81B29A; --gold: #F2CC8F; --brown: #6B5B4F; --text: #1A1A1A;
       --border: #E0D8CC; --red: #E63946;
     }
-    body { background: var(--sand); color: var(--text); font-family: 'DM Sans', sans-serif; }
-    .playfair { font-family: 'Playfair Display', serif; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   `;
 
   return (
@@ -546,7 +582,7 @@ function App() {
       <style>{css}</style>
       <div style={{ minHeight: "100vh", background: "var(--sand)", position: "relative", overflowX: "hidden", width: "100%" }}>
         {/* ── HEADER ── */}
-        <header style={{
+        <header ref={headerRef} style={{
           background: "linear-gradient(180deg, #3D405B 0%, #2A2D3E 100%)",
           color: "#F5F0E8", padding: "24px 16px 16px", position: "sticky", top: 0, zIndex: 50,
           overflowX: "hidden", width: "100%"
@@ -580,6 +616,13 @@ function App() {
                 </button>
               ))}
               <div style={{ flex: 1, minWidth: 0 }} />
+              <button onClick={() => { setShowSearch(true); setSearchQuery(""); }} style={{
+                padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+                background: "transparent", color: "#fff",
+                cursor: "pointer", fontFamily: "'DM Sans'", fontSize: 13, fontWeight: 600
+              }}>
+                Search
+              </button>
               <button onClick={() => setShowHeineken(!showHeineken)} style={{
                 padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
                 background: showHeineken ? "#00A650" : "transparent", color: "#fff",
@@ -607,9 +650,9 @@ function App() {
         </header>
 
         {/* ── GENRE FILTERS ── */}
-        <div style={{
+        <div ref={genreRef} style={{
           background: "var(--card)", borderBottom: "1px solid var(--border)",
-          padding: "10px 20px", position: "sticky", top: 108, zIndex: 40,
+          padding: "10px 20px", position: "sticky", top: headerHeight, zIndex: 40,
           overflowX: "auto"
         }} className="no-scrollbar">
           <div style={{ display: "flex", gap: 6, maxWidth: 1400, margin: "0 auto", alignItems: "center" }}>
@@ -672,7 +715,7 @@ function App() {
             {/* Stage headers — separate sticky bar above the grid */}
             <div style={{
               display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`,
-              gap: 0, minWidth: 1000, position: "sticky", top: 148, zIndex: 30,
+              gap: 0, minWidth: 1000, position: "sticky", top: headerHeight + genreHeight, zIndex: 30,
               background: "var(--sand)", paddingBottom: 4, marginBottom: -4
             }}>
               <div />
@@ -764,7 +807,7 @@ function App() {
           {showPlanner && (
             <div ref={planRef} style={{
               width: 340, flexShrink: 0, background: "var(--card)", borderLeft: "1px solid var(--border)",
-              padding: 20, position: "sticky", top: 108, maxHeight: "calc(100vh - 108px)",
+              padding: 20, position: "sticky", top: headerHeight, maxHeight: `calc(100vh - ${headerHeight}px)`,
               overflowY: "auto", overflowX: "hidden"
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -1200,6 +1243,139 @@ function App() {
               <button onClick={() => setShowHeineken(false)} style={{
                 position: "absolute", top: 16, right: 16, background: "none",
                 border: "none", fontSize: 24, cursor: "pointer", color: "var(--brown)"
+              }}>✕</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── SEARCH OVERLAY ── */}
+        {showSearch && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.7)", zIndex: 150, display: "flex",
+            alignItems: "flex-start", justifyContent: "center", padding: "80px 20px 20px"
+          }} onClick={() => { setShowSearch(false); setSearchQuery(""); }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: "var(--card)", borderRadius: 16, maxWidth: 520, width: "100%",
+              maxHeight: "75vh", overflow: "hidden", display: "flex", flexDirection: "column",
+              position: "relative"
+            }}>
+              <div style={{ padding: "20px 20px 12px", position: "relative" }}>
+                <svg style={{ position: "absolute", left: 32, top: 32, opacity: 0.4 }}
+                  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brown)" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+                </svg>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search all artists..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Escape") { setShowSearch(false); setSearchQuery(""); } }}
+                  style={{
+                    width: "100%", padding: "12px 40px 12px 42px", borderRadius: 10,
+                    border: "2px solid var(--border)", background: "var(--sand)",
+                    color: "var(--text)", fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+                    outline: "none"
+                  }}
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery("")} style={{
+                    position: "absolute", right: 28, top: 29, background: "none",
+                    border: "none", color: "var(--brown)", cursor: "pointer", fontSize: 18, padding: 4
+                  }}>✕</button>
+                )}
+              </div>
+              <div style={{ overflowY: "auto", padding: "0 20px 20px" }}>
+                {searchQuery.trim() ? (
+                  searchResults.length > 0 || heinekenSearchResults.length > 0 ? (
+                    <>
+                      {searchResults.map(p => (
+                        <div key={p.id} onClick={() => {
+                          setActiveDay(p.day);
+                          setSelectedArtist(p);
+                          setShowSearch(false);
+                          setSearchQuery("");
+                        }} style={{
+                          padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                          marginBottom: 4, border: "1px solid var(--border)",
+                          background: "#fff", transition: "all 0.15s",
+                          display: "flex", justifyContent: "space-between", alignItems: "center"
+                        }}
+                          onMouseEnter={e => e.currentTarget.style.background = "rgba(224,122,95,0.06)"}
+                          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+                        >
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>
+                              {p.isHeadliner && <span style={{ color: "var(--terra)" }}>★ </span>}{p.name}
+                            </div>
+                            <div style={{ fontSize: 11, color: "var(--brown)", marginTop: 3, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                              <span style={{
+                                background: STAGES[p.stage]?.color, color: "#fff",
+                                padding: "1px 6px", borderRadius: 3, fontSize: 10, fontWeight: 600
+                              }}>{STAGES[p.stage]?.name}</span>
+                              <span className="mono" style={{ fontSize: 11 }}>{fmtTime(p.startTime)} – {fmtTime(p.endTime)}</span>
+                              <span style={{ textTransform: "uppercase", fontSize: 10, letterSpacing: 0.5, fontWeight: 600 }}>{DAYS[p.day].label}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 8 }}>
+                            <div style={{
+                              width: 8, height: 8, borderRadius: 4,
+                              background: GENRES[p.genre]?.color || "#888"
+                            }} />
+                            {plan[p.day].some(x => x.id === p.id) && (
+                              <span style={{ fontSize: 9, color: "var(--sage)", fontWeight: 700 }}>IN PLAN</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {heinekenSearchResults.length > 0 && (
+                        <>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#00A650", textTransform: "uppercase", letterSpacing: 1, marginTop: 12, marginBottom: 6, padding: "0 4px" }}>
+                            Heineken House
+                          </div>
+                          {heinekenSearchResults.map((h, i) => (
+                            <a key={`h-${i}`} href={spotifyUrl(h.spotifyId, h.name)} target="_blank" rel="noopener noreferrer"
+                              style={{
+                                display: "flex", justifyContent: "space-between", alignItems: "center",
+                                padding: "10px 12px", borderRadius: 10, marginBottom: 4,
+                                border: "1px solid var(--border)", background: "#fff",
+                                textDecoration: "none", color: "var(--text)", transition: "all 0.15s"
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = "rgba(0,166,80,0.06)"}
+                              onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+                            >
+                              <div>
+                                <div style={{ fontWeight: 700, fontSize: 14 }}>{h.name}</div>
+                                <div style={{ fontSize: 11, color: "var(--brown)", marginTop: 2, display: "flex", gap: 6, alignItems: "center" }}>
+                                  <span style={{ background: "#00A650", color: "#fff", padding: "1px 6px", borderRadius: 3, fontSize: 10, fontWeight: 600 }}>HEINEKEN</span>
+                                  {h.note && <span style={{ fontSize: 10, color: "#00A650" }}>{h.note}</span>}
+                                  <span style={{ fontSize: 10 }}>Times TBA</span>
+                                </div>
+                              </div>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#1DB954">
+                                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                              </svg>
+                            </a>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ textAlign: "center", padding: 30, color: "var(--brown)" }}>
+                      <p style={{ fontSize: 13 }}>No artists found for "{searchQuery}"</p>
+                    </div>
+                  )
+                ) : (
+                  <div style={{ textAlign: "center", padding: 30, color: "var(--brown)" }}>
+                    <p style={{ fontSize: 13 }}>Search across all {allPerformers.length} performers and {HEINEKEN_HOUSE.length} Heineken House artists</p>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => { setShowSearch(false); setSearchQuery(""); }} style={{
+                position: "absolute", top: 12, right: 12, background: "rgba(245,240,232,0.9)",
+                border: "none", fontSize: 18, cursor: "pointer", color: "var(--brown)",
+                borderRadius: 20, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center"
               }}>✕</button>
             </div>
           </div>
