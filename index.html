@@ -668,14 +668,15 @@ function App() {
               <strong style={{ fontSize: 18, color: "var(--text)" }}>{dayData.full}</strong>
               {" "}· Gates open 1:00 PM · Music ends ~1:00 AM
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, gap: 0, minWidth: 1000 }}>
-              {/* Stage headers */}
+            {/* Stage headers — separate sticky bar above the grid */}
+            <div style={{
+              display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`,
+              gap: 0, minWidth: 1000, position: "sticky", top: 148, zIndex: 30,
+              background: "var(--sand)", paddingBottom: 4, marginBottom: -4
+            }}>
               <div />
               {MAIN_STAGES.map(s => (
-                <div key={s} style={{
-                  textAlign: "center", padding: "8px 4px", position: "sticky", top: 150, zIndex: 30,
-                  background: "var(--sand)"
-                }}>
+                <div key={s} style={{ textAlign: "center", padding: "6px 4px" }}>
                   <div style={{
                     background: STAGES[s].color, color: "#fff", borderRadius: 6, padding: "6px 2px",
                     fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase"
@@ -683,6 +684,8 @@ function App() {
                   <div style={{ fontSize: 9, color: "var(--brown)", marginTop: 2 }}>{STAGES[s].name}</div>
                 </div>
               ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, gap: 0, minWidth: 1000 }}>
               {/* Time rows — every 30 min from 1 PM to 1 AM */}
               {Array.from({ length: 25 }, (_, i) => {
                 const min = GRID_START + i * 30;
