@@ -17,8 +17,8 @@
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.2/babel.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { background: #F5F0E8; color: #1A1A1A; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body { background: #F5F0E8; color: #1A1A1A; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     .playfair { font-family: 'Playfair Display', serif; }
     .mono { font-family: 'JetBrains Mono', monospace; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -544,13 +544,14 @@ function App() {
   return (
     <>
       <style>{css}</style>
-      <div style={{ minHeight: "100vh", background: "var(--sand)", position: "relative" }}>
+      <div style={{ minHeight: "100vh", background: "var(--sand)", position: "relative", overflowX: "hidden", width: "100%" }}>
         {/* ── HEADER ── */}
         <header style={{
           background: "linear-gradient(180deg, #3D405B 0%, #2A2D3E 100%)",
-          color: "#F5F0E8", padding: "24px 20px 16px", position: "sticky", top: 0, zIndex: 50
+          color: "#F5F0E8", padding: "24px 16px 16px", position: "sticky", top: 0, zIndex: 50,
+          overflowX: "hidden", width: "100%"
         }}>
-          <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          <div style={{ maxWidth: 1400, margin: "0 auto", overflowX: "hidden" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
               <h1 className="playfair" style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.5 }}>
                 COACHELLA <span style={{ color: "var(--gold)" }}>'26</span>
@@ -560,10 +561,10 @@ function App() {
               </span>
             </div>
             {/* Day tabs */}
-            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+            <div style={{ display: "flex", gap: 6, marginTop: 16, flexWrap: "wrap" }}>
               {Object.entries(DAYS).map(([key, d]) => (
                 <button key={key} onClick={() => setActiveDay(key)} style={{
-                  padding: "8px 20px", borderRadius: 6, border: "none", cursor: "pointer",
+                  padding: "8px 14px", borderRadius: 6, border: "none", cursor: "pointer",
                   fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14,
                   background: activeDay === key ? "var(--terra)" : "rgba(255,255,255,0.1)",
                   color: activeDay === key ? "#fff" : "rgba(255,255,255,0.6)",
@@ -578,7 +579,7 @@ function App() {
                   )}
                 </button>
               ))}
-              <div style={{ flex: 1 }} />
+              <div style={{ flex: 1, minWidth: 0 }} />
               <button onClick={() => setShowHeineken(!showHeineken)} style={{
                 padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
                 background: showHeineken ? "#00A650" : "transparent", color: "#fff",
@@ -933,12 +934,12 @@ function App() {
           <div style={{
             position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
             background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex",
-            alignItems: "center", justifyContent: "center", padding: 20
+            alignItems: "center", justifyContent: "center", padding: "10px"
           }} onClick={() => { setShowMap(false); setMapSelectedStage(null); }}>
             <div onClick={e => e.stopPropagation()} style={{
-              background: "var(--sand)", borderRadius: 16, padding: 24,
-              maxWidth: 600, width: "100%", maxHeight: "90vh", overflowY: "auto",
-              position: "relative"
+              background: "var(--sand)", borderRadius: 16, padding: "16px",
+              maxWidth: 700, width: "100%", maxHeight: "90vh", overflowY: "auto",
+              position: "relative", boxSizing: "border-box"
             }}>
               <h3 className="playfair" style={{ fontSize: 22, marginBottom: 4 }}>Festival Map</h3>
               <p style={{ fontSize: 12, color: "var(--brown)", marginBottom: 12 }}>
@@ -993,9 +994,9 @@ function App() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 16, flexDirection: selStage ? "row" : "column" }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {/* Map image */}
-                <div style={{ position: "relative", flex: selStage ? "0 0 55%" : "1", borderRadius: 12, overflow: "hidden" }}>
+                <div style={{ position: "relative", flex: "1 1 280px", minWidth: 0, borderRadius: 12, overflow: "hidden" }}>
                   <img
                     src="venue-map.jpg"
                     alt="Coachella 2026 Venue Map"
@@ -1086,7 +1087,7 @@ function App() {
 
                 {/* ── Stage detail panel ── */}
                 {selStage && selStageInfo && (
-                  <div style={{ flex: "1", minWidth: 0 }}>
+                  <div style={{ flex: "1 1 200px", minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <div style={{ width: 10, height: 10, borderRadius: 5, background: selStageInfo.color }} />
@@ -1096,7 +1097,7 @@ function App() {
                         background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "var(--brown)"
                       }}>✕</button>
                     </div>
-                    <div style={{ maxHeight: 400, overflowY: "auto" }}>
+                    <div style={{ maxHeight: 300, overflowY: "auto" }}>
                       {stagePerfs.map((p, i) => {
                         const isNow = p.startMin <= scrubberMin && p.endMin > scrubberMin;
                         const isPast = p.endMin <= scrubberMin;
