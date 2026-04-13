@@ -423,43 +423,137 @@ Display these as bookmarkable blocks in the planner:
 
 ## 6. STAGE MAP DATA
 
-### Stage Positions (approximate relative coordinates for SVG map)
-Based on the standard Coachella festival layout at Empire Polo Club:
+### Approach: Image Overlay (NOT hand-drawn SVG)
 
+Use the **official 2026 Coachella Venue Map** image as the base layer. The uploaded file is at:
 ```
-Festival Layout (north-up orientation):
-┌──────────────────────────────────────────────┐
-│                                              │
-│   [ENTRANCE]                                 │
-│                                              │
-│         ┌──────────┐                         │
-│         │ COACHELLA │  (Main Stage)           │
-│         │  STAGE    │                         │
-│         └──────────┘                         │
-│                                              │
-│    ┌──────────┐     ┌────────┐               │
-│    │ OUTDOOR  │     │  GOBI  │               │
-│    │ THEATRE  │     │  TENT  │               │
-│    └──────────┘     └────────┘               │
-│                                              │
-│    ┌────────┐  ┌────────┐  ┌────────┐        │
-│    │ MOJAVE │  │ SONORA │  │  YUMA  │        │
-│    │  TENT  │  │  TENT  │  │  TENT  │        │
-│    └────────┘  └────────┘  └────────┘        │
-│                                              │
-│              ┌────────┐                      │
-│              │ Do LaB │                      │
-│              └────────┘                      │
-│                                              │
-│                    ┌──────────┐               │
-│                    │  SAHARA  │               │
-│                    │   TENT   │  (far south) │
-│                    └──────────┘               │
-│                                              │
-│         ┌────────┐                           │
-│         │ QUASAR │                           │
-│         └────────┘                           │
-└──────────────────────────────────────────────┘
+/mnt/user-data/uploads/2026-Coachella-Map-Venue-1080x1350.jpg
+```
+
+**Claude Code must copy this file to outputs and embed it.** For GitHub Pages, either:
+- Base64-encode the image inline in the HTML, OR
+- Reference it as a separate file in the same repo directory
+
+#### Implementation Pattern
+```jsx
+const StageMap = ({ currentTime, activeDay, performers }) => {
+  const [hoveredStage, setHoveredStage] = useState(null);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', maxWidth: 540 }}>
+      {/* The actual venue map image */}
+      <img
+        src="2026-Coachella-Map-Venue-1080x1350.jpg" // or base64 data URI
+        alt="Coachella 2026 Venue Map"
+        style={{ width: '100%', height: 'auto', display: 'block' }}
+      />
+
+      {/* Invisible hotspot overlays — positioned as % of image */}
+      {Object.entries(STAGE_HOTSPOTS).map(([stageId, hotspot]) => (
+        <div
+          key={stageId}
+          onMouseEnter={() => setHoveredStage(stageId)}
+          onMouseLeave={() => setHoveredStage(null)}
+          onClick={() => onStageClick(stageId)}
+          style={{
+            position: 'absolute',
+            left: `${hotspot.x}%`,
+            top: `${hotspot.y}%`,
+            width: `${hotspot.w}%`,
+            height: `${hotspot.h}%`,
+            borderRadius: '8px',
+            cursor: 'pointer',
+            // Subtle glow on hover
+            background: hoveredStage === stageId
+              ? 'rgba(224, 122, 95, 0.35)'  // terracotta glow
+              : 'transparent',
+            border: hoveredStage === stageId
+              ? '2px solid rgba(224, 122, 95, 0.8)'
+              : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            // Pulsing dot to show "now playing"
+          }}
+        >
+          {/* "Now Playing" badge appears when timeline scrubber is active */}
+          {hoveredStage === stageId && (
+            <NowPlayingTooltip
+              stage={stageId}
+              time={currentTime}
+              performers={performers}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+### Stage Hotspot Coordinates (% of image dimensions)
+
+These are measured from the uploaded 1080×1350 venue map image. All values are percentages — `x` and `y` mark the top-left corner of the hotspot rectangle.
+
+```js
+const STAGE_HOTSPOTS = {
+  coachella: { x: 35, y: 1,  w: 30, h: 6,  label: "Coachella Stage" },
+  outdoor:   { x: 72, y: 2,  w: 22, h: 5,  label: "Outdoor Theatre" },
+  yuma:      { x: 2,  y: 18, w: 16, h: 6,  label: "Yuma" },
+  sonora:    { x: 58, y: 20, w: 16, h: 6,  label: "Sonora" },
+  gobi:      { x: 60, y: 35, w: 15, h: 6,  label: "Gobi" },
+  mojave:    { x: 56, y: 48, w: 18, h: 7,  label: "Mojave" },
+  dolab:     { x: 10, y: 55, w: 16, h: 7,  label: "Do LaB" },
+  quasar:    { x: 38, y: 65, w: 16, h: 5,  label: "Quasar" },
+  sahara:    { x: 10, y: 75, w: 20, h: 9,  label: "Sahara" },
+  heineken:  { x: 80, y: 30, w: 15, h: 6,  label: "Heineken House" },
+};
+```
+
+> **IMPORTANT for Claude Code**: These % coordinates are approximate and should be fine-tuned visually. The map image is 1080×1350 (portrait). After implementing, visually verify each hotspot aligns with the actual stage label on the map and adjust by ±2-3% as needed.
+
+### Hotspot Interaction Details
+
+1. **Hover**: Stage area gets a semi-transparent colored overlay + border glow. A tooltip appears showing:
+   - Stage name
+   - Current performer (based on timeline scrubber position)
+   - Next performer + start time
+   - Genre color dot
+
+2. **Click**: Filters the main schedule grid to show only that stage's performers
+
+3. **Active plan indicator**: If the user has a performer planned at a stage, show a small colored dot/pin on that stage's hotspot area (always visible, not just on hover)
+
+4. **Walking path lines**: When hovering on a planned performer in the sidebar, draw a subtle dashed SVG line on the map from the current stage to the next planned stage, with the walking time displayed midway along the line. This SVG sits as a layer between the image and the hotspots:
+```jsx
+<svg style={{
+  position: 'absolute', top: 0, left: 0,
+  width: '100%', height: '100%',
+  pointerEvents: 'none'
+}}>
+  <line
+    x1={`${fromStage.centerX}%`} y1={`${fromStage.centerY}%`}
+    x2={`${toStage.centerX}%`}   y2={`${toStage.centerY}%`}
+    stroke="#E07A5F" strokeWidth="2" strokeDasharray="6,4"
+  />
+  <text x={midX} y={midY} fill="#1A1A1A" fontSize="12" textAnchor="middle">
+    ~{walkTime} min
+  </text>
+</svg>
+```
+
+### Stage Center Points (for walking path lines)
+```js
+const STAGE_CENTERS = {
+  coachella: { centerX: 50, centerY: 4 },
+  outdoor:   { centerX: 83, centerY: 5 },
+  yuma:      { centerX: 10, centerY: 21 },
+  sonora:    { centerX: 66, centerY: 23 },
+  gobi:      { centerX: 67, centerY: 38 },
+  mojave:    { centerX: 65, centerY: 52 },
+  dolab:     { centerX: 18, centerY: 59 },
+  quasar:    { centerX: 46, centerY: 68 },
+  sahara:    { centerX: 20, centerY: 80 },
+  heineken:  { centerX: 87, centerY: 33 },
+};
 ```
 
 ### Walking Times Between Stages (minutes)
@@ -526,14 +620,17 @@ Each artist card includes:
   - **Save as PNG**: Use `html2canvas` to screenshot the planner panel
   - **Save as PDF**: Use `jsPDF` + `html2canvas` to generate a downloadable PDF with day header, date, and the full planned schedule
 
-### 7F. Interactive Stage Map
-- SVG-based map of the festival grounds
+### 7F. Interactive Stage Map (Image Overlay)
+- Uses the **official 2026 Coachella Venue Map** as background image (uploaded file: `2026-Coachella-Map-Venue-1080x1350.jpg`)
+- Invisible hotspot divs positioned over each stage using % coordinates (see Section 6 for exact values)
 - Hoverable stage areas that:
-  - Glow/highlight on hover
+  - Glow with a semi-transparent colored overlay + border on hover
   - Show a tooltip with "Now Playing at [Stage]" based on the timeline scrubber position
   - List upcoming artists at that stage
 - Click a stage to filter the schedule to just that stage
-- Walking time paths between stages shown on hover between two planned sets
+- Walking time paths drawn as dashed SVG lines overlaid between two planned sets
+- Small colored dots/pins on stages where the user has planned artists
+- On mobile: the map becomes a toggleable overlay panel (tap to open/close), with tap-instead-of-hover for hotspots
 
 ### 7G. Timeline Scrubber
 - Horizontal bar at the bottom of the page
@@ -788,7 +885,7 @@ For GitHub Pages deployment, the HTML version is better:
 
 5. **Spotify artist IDs** — For the ~30% of artists marked "search needed," use the Spotify search URL format as fallback: `https://open.spotify.com/search/${encodeURIComponent(name)}`
 
-6. **The map should be an SVG illustration**, not an embedded image. Build it from the approximate stage positions. It doesn't need to be geographically exact — it needs to be useful and beautiful.
+6. **The map uses the official venue image** (`2026-Coachella-Map-Venue-1080x1350.jpg`) with interactive hotspot overlays — not a hand-drawn SVG. Copy the image file to the outputs directory alongside the HTML file for GitHub Pages deployment. Alternatively, base64-encode it inline for a single-file deployment.
 
 ---
 
