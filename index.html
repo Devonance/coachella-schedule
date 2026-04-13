@@ -707,20 +707,17 @@ function App() {
         {/* ── MAIN CONTENT ── */}
         <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 12px", display: "flex", gap: 0 }}>
           {/* Schedule Grid */}
-          <div style={{ flex: 1, overflowX: "auto", padding: "16px 0" }}>
+          <div style={{ flex: 1, padding: "16px 0 0" }}>
             <p style={{ fontSize: 13, color: "var(--brown)", marginBottom: 12, padding: "0 8px" }} className="playfair">
               <strong style={{ fontSize: 18, color: "var(--text)" }}>{dayData.full}</strong>
               {" "}· Gates open 1:00 PM · Music ends ~1:00 AM
             </p>
-            {/* Stage headers — separate sticky bar above the grid */}
-            <div style={{
-              display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`,
-              gap: 0, minWidth: 1000, position: "sticky", top: headerHeight + genreHeight, zIndex: 30,
-              background: "var(--sand)", paddingBottom: 4, marginBottom: -4
-            }}>
-              <div />
+            <div style={{ overflow: "auto", maxHeight: `calc(100vh - ${headerHeight + genreHeight}px - 100px)` }}>
+            <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, gap: 0, minWidth: 1000 }}>
+              {/* Stage headers — frozen first row (sticky within scroll container) */}
+              <div style={{ position: "sticky", top: 0, zIndex: 30, background: "var(--sand)" }} />
               {MAIN_STAGES.map(s => (
-                <div key={s} style={{ textAlign: "center", padding: "6px 4px" }}>
+                <div key={`hdr-${s}`} style={{ position: "sticky", top: 0, zIndex: 30, background: "var(--sand)", textAlign: "center", padding: "6px 4px" }}>
                   <div style={{
                     background: STAGES[s].color, color: "#fff", borderRadius: 6, padding: "6px 2px",
                     fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase"
@@ -728,8 +725,6 @@ function App() {
                   <div style={{ fontSize: 9, color: "var(--brown)", marginTop: 2 }}>{STAGES[s].name}</div>
                 </div>
               ))}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, gap: 0, minWidth: 1000 }}>
               {/* Time rows — every 30 min from 1 PM to 1 AM */}
               {Array.from({ length: 25 }, (_, i) => {
                 const min = GRID_START + i * 30;
@@ -800,6 +795,7 @@ function App() {
                   </React.Fragment>
                 );
               })}
+            </div>
             </div>
           </div>
 
