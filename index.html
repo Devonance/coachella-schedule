@@ -430,6 +430,8 @@ function App() {
   const [genreHeight, setGenreHeight] = useState(40);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const gridScrollRef = useRef(null);
+  const stageHeaderScrollRef = useRef(null);
 
   const dayData = DAYS[activeDay];
   const performers = dayData.performers;
@@ -495,6 +497,12 @@ function App() {
   }, []);
 
   const isPlanned = (p) => currentPlan.some(x => x.id === p.id);
+
+  const syncHeaderScroll = useCallback(() => {
+    if (stageHeaderScrollRef.current && gridScrollRef.current) {
+      stageHeaderScrollRef.current.scrollLeft = gridScrollRef.current.scrollLeft;
+    }
+  }, []);
 
   // Conflict detection
   const conflicts = useMemo(() => {
@@ -712,19 +720,26 @@ function App() {
               <strong style={{ fontSize: 18, color: "var(--text)" }}>{dayData.full}</strong>
               {" "}· Gates open 1:00 PM · Music ends ~1:00 AM
             </p>
-            <div style={{ overflow: "auto", maxHeight: `calc(100vh - ${headerHeight + genreHeight}px - 100px)` }}>
+            {/* Stage headers — sticky bar, horizontal scroll synced with grid */}
+            <div ref={stageHeaderScrollRef} style={{
+              overflowX: "hidden", position: "sticky", top: headerHeight + genreHeight, zIndex: 30,
+              background: "var(--sand)", paddingBottom: 4
+            }}>
+              <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, minWidth: 1000 }}>
+                <div />
+                {MAIN_STAGES.map(s => (
+                  <div key={`hdr-${s}`} style={{ textAlign: "center", padding: "6px 4px" }}>
+                    <div style={{
+                      background: STAGES[s].color, color: "#fff", borderRadius: 6, padding: "6px 2px",
+                      fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase"
+                    }}>{STAGES[s].short}</div>
+                    <div style={{ fontSize: 9, color: "var(--brown)", marginTop: 2 }}>{STAGES[s].name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div ref={gridScrollRef} onScroll={syncHeaderScroll} style={{ overflowX: "auto" }}>
             <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, gap: 0, minWidth: 1000 }}>
-              {/* Stage headers — frozen first row (sticky within scroll container) */}
-              <div style={{ position: "sticky", top: 0, zIndex: 30, background: "var(--sand)" }} />
-              {MAIN_STAGES.map(s => (
-                <div key={`hdr-${s}`} style={{ position: "sticky", top: 0, zIndex: 30, background: "var(--sand)", textAlign: "center", padding: "6px 4px" }}>
-                  <div style={{
-                    background: STAGES[s].color, color: "#fff", borderRadius: 6, padding: "6px 2px",
-                    fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase"
-                  }}>{STAGES[s].short}</div>
-                  <div style={{ fontSize: 9, color: "var(--brown)", marginTop: 2 }}>{STAGES[s].name}</div>
-                </div>
-              ))}
               {/* Time rows — every 30 min from 1 PM to 1 AM */}
               {Array.from({ length: 25 }, (_, i) => {
                 const min = GRID_START + i * 30;
