@@ -25,9 +25,11 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     #root { min-height: 100vh; }
     /* Custom range slider */
-    input[type="range"] { -webkit-appearance: none; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.15); outline: none; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; }
-    input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; }
+    input[type="range"] { -webkit-appearance: none; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.15); outline: none; touch-action: none; padding: 8px 0; margin: 0; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+    input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: #E07A5F; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+    input[type="range"]::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; }
+    input[type="range"]::-moz-range-track { height: 8px; border-radius: 4px; }
     /* Loading screen */
     #loading { position: fixed; inset: 0; background: #3D405B; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s; }
     #loading h1 { font-family: 'Playfair Display', serif; color: #F2CC8F; font-size: 36px; font-weight: 900; }
@@ -666,14 +668,15 @@ function App() {
               <strong style={{ fontSize: 18, color: "var(--text)" }}>{dayData.full}</strong>
               {" "}· Gates open 1:00 PM · Music ends ~1:00 AM
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, gap: 0, minWidth: 1000 }}>
-              {/* Stage headers */}
+            {/* Stage headers — separate sticky bar above the grid */}
+            <div style={{
+              display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`,
+              gap: 0, minWidth: 1000, position: "sticky", top: 148, zIndex: 30,
+              background: "var(--sand)", paddingBottom: 4, marginBottom: -4
+            }}>
               <div />
               {MAIN_STAGES.map(s => (
-                <div key={s} style={{
-                  textAlign: "center", padding: "8px 4px", position: "sticky", top: 150, zIndex: 30,
-                  background: "var(--sand)"
-                }}>
+                <div key={s} style={{ textAlign: "center", padding: "6px 4px" }}>
                   <div style={{
                     background: STAGES[s].color, color: "#fff", borderRadius: 6, padding: "6px 2px",
                     fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase"
@@ -681,6 +684,8 @@ function App() {
                   <div style={{ fontSize: 9, color: "var(--brown)", marginTop: 2 }}>{STAGES[s].name}</div>
                 </div>
               ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: `60px repeat(${MAIN_STAGES.length}, minmax(110px, 1fr))`, gap: 0, minWidth: 1000 }}>
               {/* Time rows — every 30 min from 1 PM to 1 AM */}
               {Array.from({ length: 25 }, (_, i) => {
                 const min = GRID_START + i * 30;
@@ -941,9 +946,15 @@ function App() {
               </p>
 
               {/* ── Time scrubber inside map ── */}
-              <div style={{
-                background: "var(--navy)", borderRadius: 10, padding: "10px 16px", marginBottom: 16
-              }}>
+              <div
+                onMouseDown={e => e.stopPropagation()}
+                onTouchStart={e => e.stopPropagation()}
+                onTouchMove={e => e.stopPropagation()}
+                style={{
+                  background: "var(--navy)", borderRadius: 10, padding: "10px 16px", marginBottom: 16,
+                  touchAction: "none", position: "relative", zIndex: 10
+                }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span className="mono" style={{ fontSize: 14, color: "var(--gold)", fontWeight: 700 }}>
                     {minToTime(scrubberMin)}
@@ -957,7 +968,11 @@ function App() {
                 </div>
                 <input type="range" min={GRID_START} max={GRID_END} value={scrubberMin}
                   onChange={e => setScrubberMin(Number(e.target.value))}
-                  style={{ width: "100%", accentColor: "var(--terra)", cursor: "pointer" }}
+                  onMouseDown={e => e.stopPropagation()}
+                  onTouchStart={e => e.stopPropagation()}
+                  onTouchMove={e => e.stopPropagation()}
+                  onPointerDown={e => e.stopPropagation()}
+                  style={{ width: "100%", accentColor: "var(--terra)", cursor: "pointer", touchAction: "none", position: "relative", zIndex: 11 }}
                 />
                 {/* Now playing badges */}
                 <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
